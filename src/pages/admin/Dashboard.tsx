@@ -21,6 +21,7 @@ import {
   Tooltip
 } from "recharts";
 
+export default function Dashboard() {
   // 获取用户统计数据
   const { data: usersStats } = useQuery({
     queryKey: ['users-stats'],
@@ -126,7 +127,6 @@ import {
     }
   });
 
-export default function Dashboard() {
   const stats = [
     {
       name: "总用户数",
