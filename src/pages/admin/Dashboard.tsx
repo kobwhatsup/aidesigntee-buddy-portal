@@ -3,6 +3,23 @@ import { ChartBar, Users, ShoppingCart, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent 
+} from "@/components/ui/chart";
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid,
+  BarChart,
+  Bar,
+  ResponsiveContainer
+} from "recharts";
 
 export default function Dashboard() {
   // 获取用户统计数据
@@ -36,7 +53,7 @@ export default function Dashboard() {
       const { data: totalAmount } = await supabase
         .from('orders')
         .select('total_amount')
-        .eq('status', 'delivered');  // 修改这里，使用 'delivered' 而不是 'completed'
+        .eq('status', 'delivered');
 
       const totalSales = totalAmount?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
 
@@ -54,6 +71,59 @@ export default function Dashboard() {
         .eq('is_public', false);
 
       return { pendingDesigns };
+    }
+  });
+
+  // 获取每日销售数据
+  const { data: dailySales } = useQuery({
+    queryKey: ['daily-sales'],
+    queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data } = await supabase
+        .from('orders')
+        .select('created_at, total_amount')
+        .eq('status', 'delivered')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at');
+
+      const salesByDay = data?.reduce((acc: any, order) => {
+        const date = new Date(order.created_at).toLocaleDateString();
+        acc[date] = (acc[date] || 0) + (order.total_amount || 0);
+        return acc;
+      }, {});
+
+      return Object.entries(salesByDay || {}).map(([date, amount]) => ({
+        date,
+        amount
+      }));
+    }
+  });
+
+  // 获取每日新增用户数据
+  const { data: dailyUsers } = useQuery({
+    queryKey: ['daily-users'],
+    queryFn: async () => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at');
+
+      const usersByDay = data?.reduce((acc: any, user) => {
+        const date = new Date(user.created_at).toLocaleDateString();
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      }, {});
+
+      return Object.entries(usersByDay || {}).map(([date, count]) => ({
+        date,
+        count
+      }));
     }
   });
 
@@ -89,8 +159,8 @@ export default function Dashboard() {
   ];
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">数据概览</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">数据概览</h1>
       
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
@@ -120,6 +190,76 @@ export default function Dashboard() {
             </div>
           </Card>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* 销售趋势图表 */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">销售趋势</h2>
+          <div className="h-[300px]">
+            <ChartContainer
+              config={{
+                sales: {
+                  label: "销售额",
+                  theme: {
+                    light: "#0ea5e9",
+                    dark: "#38bdf8",
+                  },
+                },
+              }}
+            >
+              <AreaChart data={dailySales || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <ChartTooltip content={(props) => (
+                  <ChartTooltipContent {...props} />
+                )} />
+                <Area
+                  type="monotone"
+                  dataKey="amount"
+                  name="sales"
+                  stroke="#0ea5e9"
+                  fill="#0ea5e9"
+                  fillOpacity={0.2}
+                />
+              </AreaChart>
+            </ChartContainer>
+          </div>
+        </Card>
+
+        {/* 用户增长图表 */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">用户增长</h2>
+          <div className="h-[300px]">
+            <ChartContainer
+              config={{
+                users: {
+                  label: "新增用户",
+                  theme: {
+                    light: "#10b981",
+                    dark: "#34d399",
+                  },
+                },
+              }}
+            >
+              <BarChart data={dailyUsers || []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <ChartTooltip content={(props) => (
+                  <ChartTooltipContent {...props} />
+                )} />
+                <Bar
+                  dataKey="count"
+                  name="users"
+                  fill="#10b981"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ChartContainer>
+          </div>
+        </Card>
       </div>
     </div>
   );
