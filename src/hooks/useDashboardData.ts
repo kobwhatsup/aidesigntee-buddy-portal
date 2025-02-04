@@ -45,15 +45,13 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
-      // 获取用户总数
+      // 获取用户总数 - 不需要时间范围过滤
       const { count: totalUsers } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
       // 获取活跃用户数（过去30天有订单的用户）
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
+      const thirtyDaysAgo = subDays(new Date(), 30);
       const { data: activeUsersData } = await supabase
         .from('orders')
         .select('user_id')
@@ -62,29 +60,30 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
       
       const activeUsers = new Set(activeUsersData?.map(order => order.user_id)).size;
 
+      // 获取订单数据
       const { data: orders } = await supabase
         .from('orders')
         .select('total_amount, status')
         .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString());
+        .lte('created_at', end.toISOString())
+        .not('is_deleted', 'eq', true);
 
+      // 获取购物车商品数量 - 不需要时间范围过滤，显示当前购物车中的商品
       const { count: cartItems } = await supabase
         .from('cart_items')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString());
+        .select('*', { count: 'exact', head: true });
 
+      // 获取设计稿数量
       const { count: designs } = await supabase
         .from('design_drafts')
         .select('*', { count: 'exact', head: true })
+        .eq('is_deleted', false)
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
       const totalOrders = orders?.length || 0;
       const totalSales = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
       const completedOrders = orders?.filter(order => order.status === 'delivered').length || 0;
-      const pendingOrders = orders?.filter(order => order.status === 'pending_payment').length || 0;
-      const processingOrders = orders?.filter(order => ['paid', 'processing', 'shipped'].includes(order.status)).length || 0;
       const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
       return {
@@ -94,8 +93,6 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
         totalOrders,
         totalSales,
         completedOrders,
-        pendingOrders,
-        processingOrders,
         cartItems: cartItems || 0,
         designs: designs || 0,
         avgOrderValue
@@ -113,6 +110,7 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
         .select('created_at, total_amount, status')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString())
+        .not('is_deleted', 'eq', true)
         .order('created_at');
 
       const { data: users } = await supabase
