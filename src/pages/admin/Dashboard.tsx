@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   ChartContainer, 
-  ChartTooltip, 
   ChartTooltipContent,
   ChartLegend,
   ChartLegendContent 
@@ -18,10 +17,10 @@ import {
   CartesianGrid,
   BarChart,
   Bar,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Tooltip
 } from "recharts";
 
-export default function Dashboard() {
   // 获取用户统计数据
   const { data: usersStats } = useQuery({
     queryKey: ['users-stats'],
@@ -127,6 +126,7 @@ export default function Dashboard() {
     }
   });
 
+export default function Dashboard() {
   const stats = [
     {
       name: "总用户数",
@@ -212,9 +212,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
-                <ChartTooltip content={(props) => (
-                  <ChartTooltipContent {...props} />
-                )} />
+                <Tooltip content={<ChartTooltipContent />} />
                 <Area
                   type="monotone"
                   dataKey="amount"
@@ -247,9 +245,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
-                <ChartTooltip content={(props) => (
-                  <ChartTooltipContent {...props} />
-                )} />
+                <Tooltip content={<ChartTooltipContent />} />
                 <Bar
                   dataKey="count"
                   name="users"
