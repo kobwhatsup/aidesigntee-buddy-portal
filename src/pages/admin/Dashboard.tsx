@@ -61,7 +61,7 @@ export default function Dashboard() {
       // 订单统计
       const { data: orders } = await supabase
         .from('orders')
-        .select('total_amount, status, created_at')
+        .select('total_amount, status')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
@@ -125,20 +125,20 @@ export default function Dashboard() {
         .order('created_at');
 
       // 处理数据按日期分组
-      const salesByDay = orders?.reduce((acc: any, order) => {
+      const salesByDay = orders?.reduce((acc: Record<string, number>, order) => {
         const date = format(new Date(order.created_at), 'yyyy-MM-dd');
         acc[date] = (acc[date] || 0) + (order.total_amount || 0);
         return acc;
       }, {});
 
-      const usersByDay = users?.reduce((acc: any, user) => {
+      const usersByDay = users?.reduce((acc: Record<string, number>, user) => {
         const date = format(new Date(user.created_at), 'yyyy-MM-dd');
         acc[date] = (acc[date] || 0) + 1;
         return acc;
       }, {});
 
       // 订单状态分布
-      const orderStatusData = orders?.reduce((acc: any, order) => {
+      const orderStatusData = orders?.reduce((acc: Record<string, number>, order) => {
         acc[order.status] = (acc[order.status] || 0) + 1;
         return acc;
       }, {});
@@ -157,7 +157,7 @@ export default function Dashboard() {
         })).sort((a, b) => a.date.localeCompare(b.date)),
         orderStatus: Object.entries(orderStatusData || {}).map(([name, value]) => ({
           name,
-          value
+          value: value as number
         }))
       };
     }
