@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { ChartBar, ShoppingCart, Users, CheckCircle, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +13,7 @@ const navigation = [
   { name: "设计审核", href: "/admin/designs", icon: CheckCircle },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
@@ -175,7 +175,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </header>
 
-        <main className="flex-1 p-4">{children}</main>
+        <main className="flex-1 p-4">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
