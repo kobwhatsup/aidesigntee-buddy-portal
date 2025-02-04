@@ -1,33 +1,87 @@
 import { Card } from "@/components/ui/card";
 import { ChartBar, Users, ShoppingCart, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Dashboard() {
+  // 获取用户统计数据
+  const { data: usersStats } = useQuery({
+    queryKey: ['users-stats'],
+    queryFn: async () => {
+      const { count: totalUsers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { count: newUsers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', thirtyDaysAgo.toISOString());
+
+      return { totalUsers, newUsers };
+    }
+  });
+
+  // 获取订单统计数据
+  const { data: ordersStats } = useQuery({
+    queryKey: ['orders-stats'],
+    queryFn: async () => {
+      const { count: totalOrders } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true });
+
+      const { data: totalAmount } = await supabase
+        .from('orders')
+        .select('total_amount')
+        .eq('status', 'completed');
+
+      const totalSales = totalAmount?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+
+      return { totalOrders, totalSales };
+    }
+  });
+
+  // 获取待审核设计数量
+  const { data: designStats } = useQuery({
+    queryKey: ['designs-stats'],
+    queryFn: async () => {
+      const { count: pendingDesigns } = await supabase
+        .from('design_drafts')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_public', false);
+
+      return { pendingDesigns };
+    }
+  });
+
   const stats = [
     {
       name: "总用户数",
-      value: "1,234",
+      value: usersStats?.totalUsers?.toString() || "加载中...",
       icon: Users,
-      change: "+12%",
+      change: usersStats?.newUsers ? `+${usersStats.newUsers}` : "...",
       changeType: "increase",
     },
     {
       name: "总订单数",
-      value: "456",
+      value: ordersStats?.totalOrders?.toString() || "加载中...",
       icon: ShoppingCart,
-      change: "+8%",
+      change: ordersStats?.totalSales ? `¥${ordersStats.totalSales.toFixed(2)}` : "...",
       changeType: "increase",
     },
     {
       name: "待审核设计",
-      value: "23",
+      value: designStats?.pendingDesigns?.toString() || "加载中...",
       icon: CheckCircle,
-      change: "-5",
-      changeType: "decrease",
+      change: "待处理",
+      changeType: "neutral",
     },
     {
       name: "本月销售额",
-      value: "¥12,345",
+      value: ordersStats?.totalSales ? `¥${ordersStats.totalSales.toFixed(2)}` : "加载中...",
       icon: ChartBar,
       change: "+23%",
       changeType: "increase",
@@ -55,7 +109,9 @@ export default function Dashboard() {
                     "text-sm",
                     stat.changeType === "increase"
                       ? "text-green-600"
-                      : "text-red-600"
+                      : stat.changeType === "decrease"
+                      ? "text-red-600"
+                      : "text-gray-600"
                   )}
                 >
                   {stat.change}
