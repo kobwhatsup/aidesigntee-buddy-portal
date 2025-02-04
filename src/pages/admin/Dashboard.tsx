@@ -26,6 +26,15 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { addDays, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, format, subDays, subMonths, subYears } from "date-fns";
 
 type TimeRange = 'today' | 'yesterday' | 'this_month' | 'last_month' | 'this_year' | 'custom';
+type ChangeType = 'increase' | 'decrease' | 'neutral';
+
+type StatItem = {
+  name: string;
+  value: string;
+  icon: React.ElementType;
+  change: string;
+  changeType: ChangeType;
+};
 
 export default function Dashboard() {
   const [timeRange, setTimeRange] = useState<TimeRange>('today');
@@ -34,7 +43,6 @@ export default function Dashboard() {
     to: new Date()
   });
 
-  // 获取时间范围
   const getTimeRange = () => {
     const now = new Date();
     switch (timeRange) {
@@ -64,7 +72,6 @@ export default function Dashboard() {
     }
   };
 
-  // 获取统计数据
   const { data: statsData } = useQuery({
     queryKey: ['dashboard-stats', timeRange, customDateRange],
     queryFn: async () => {
@@ -183,52 +190,51 @@ export default function Dashboard() {
     }
   });
 
-  const stats = [
+  const stats: StatItem[] = [
     {
       name: "新增用户",
       value: statsData?.newUsers?.toString() || "0",
       icon: UserPlus,
       change: "+23%",
-      changeType: "increase" as const,
+      changeType: "increase",
     },
     {
       name: "订单总数",
       value: statsData?.totalOrders?.toString() || "0",
       icon: Package,
       change: statsData?.completedOrders ? `已完成: ${statsData.completedOrders}` : "0",
-      changeType: "neutral" as const,
+      changeType: "neutral",
     },
     {
       name: "销售额",
       value: statsData?.totalSales ? `¥${statsData.totalSales.toFixed(2)}` : "¥0",
       icon: DollarSign,
       change: `平均订单: ¥${(statsData?.avgOrderValue || 0).toFixed(2)}`,
-      changeType: "increase" as const,
+      changeType: "increase",
     },
     {
       name: "购物车商品",
       value: statsData?.cartItems?.toString() || "0",
       icon: ShoppingCart,
       change: "待结算",
-      changeType: "neutral" as const,
+      changeType: "neutral",
     },
     {
       name: "设计稿数量",
       value: statsData?.designs?.toString() || "0",
       icon: ChartBar,
       change: "新增",
-      changeType: "neutral" as const,
+      changeType: "neutral",
     },
     {
       name: "待处理订单",
       value: statsData?.processingOrders?.toString() || "0",
       icon: Package,
       change: `待付款: ${statsData?.pendingOrders || 0}`,
-      changeType: "neutral" as const,
+      changeType: "neutral",
     }
   ];
 
-  // 饼图颜色
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   return (
