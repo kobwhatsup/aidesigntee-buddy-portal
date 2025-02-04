@@ -5,7 +5,7 @@ import { SalesChart } from "@/components/admin/dashboard/SalesChart";
 import { UserGrowthChart } from "@/components/admin/dashboard/UserGrowthChart";
 import { OrderStatusChart } from "@/components/admin/dashboard/OrderStatusChart";
 import { TimeRange } from "@/types/dashboard";
-import { useDashboardData } from "@/hooks/useDashboardData";
+import { useDashboard } from "@/hooks/dashboard/useDashboard";
 import { getStatsConfig } from "@/config/dashboardStats";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -16,7 +16,7 @@ export default function Dashboard() {
     to: new Date()
   });
 
-  const { statsData, trendsData, isLoading } = useDashboardData(timeRange, customDateRange);
+  const { statsData, trendsData, isLoading } = useDashboard(timeRange, customDateRange);
   const stats = getStatsConfig(statsData);
 
   if (isLoading) {
