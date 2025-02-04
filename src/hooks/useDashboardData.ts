@@ -60,18 +60,18 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
       
       const activeUsers = new Set(activeUsersData?.map(order => order.user_id)).size;
 
-      // 获取订单数据
+      // 获取订单数据 - 包括所有状态的订单，但排除已删除的
       const { data: orders } = await supabase
         .from('orders')
         .select('total_amount, status')
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString())
         .not('is_deleted', 'eq', true);
 
-      // 获取购物车商品数量 - 不需要时间范围过滤，显示当前购物车中的商品
-      const { count: cartItems } = await supabase
+      // 获取购物车商品数量总和
+      const { data: cartItemsData } = await supabase
         .from('cart_items')
-        .select('*', { count: 'exact', head: true });
+        .select('quantity');
+
+      const cartItemsTotal = cartItemsData?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
 
       // 获取设计稿数量
       const { count: designs } = await supabase
@@ -93,7 +93,7 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
         totalOrders,
         totalSales,
         completedOrders,
-        cartItems: cartItems || 0,
+        cartItems: cartItemsTotal,
         designs: designs || 0,
         avgOrderValue
       };
