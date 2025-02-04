@@ -38,11 +38,29 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
     queryFn: async () => {
       const { start, end } = getTimeRange();
       
+      // 获取新增用户数
       const { count: newUsers } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
+
+      // 获取用户总数
+      const { count: totalUsers } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      // 获取活跃用户数（过去30天有订单的用户）
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { data: activeUsersData } = await supabase
+        .from('orders')
+        .select('user_id')
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .not('status', 'eq', 'payment_timeout');
+      
+      const activeUsers = new Set(activeUsersData?.map(order => order.user_id)).size;
 
       const { data: orders } = await supabase
         .from('orders')
@@ -71,6 +89,8 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
 
       return {
         newUsers: newUsers || 0,
+        totalUsers: totalUsers || 0,
+        activeUsers,
         totalOrders,
         totalSales,
         completedOrders,

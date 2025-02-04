@@ -1,4 +1,4 @@
-import { UserPlus, Package, DollarSign, ShoppingCart, ChartBar } from "lucide-react";
+import { UserPlus, Package, DollarSign, ShoppingCart, ChartBar, Users } from "lucide-react";
 import { StatItem } from "@/types/dashboard";
 
 export const getStatsConfig = (statsData: any): StatItem[] => [
@@ -8,6 +8,13 @@ export const getStatsConfig = (statsData: any): StatItem[] => [
     icon: UserPlus,
     change: "+23%",
     changeType: "increase",
+  },
+  {
+    name: "用户总数",
+    value: statsData?.totalUsers?.toString() || "0",
+    icon: Users,
+    change: `活跃: ${statsData?.activeUsers || 0}`,
+    changeType: "neutral",
   },
   {
     name: "订单总数",
@@ -35,13 +42,6 @@ export const getStatsConfig = (statsData: any): StatItem[] => [
     value: statsData?.designs?.toString() || "0",
     icon: ChartBar,
     change: "新增",
-    changeType: "neutral",
-  },
-  {
-    name: "待处理订单",
-    value: statsData?.processingOrders?.toString() || "0",
-    icon: Package,
-    change: `待付款: ${statsData?.pendingOrders || 0}`,
     changeType: "neutral",
   }
 ];
