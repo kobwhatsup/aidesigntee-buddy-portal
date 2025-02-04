@@ -15,6 +15,7 @@ export default function Orders() {
   const { data: orders, isLoading } = useQuery({
     queryKey: ['admin-orders'],
     queryFn: async () => {
+      // 移除 is_deleted 条件，因为这可能会过滤掉一些订单
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -23,17 +24,23 @@ export default function Orders() {
             quantity,
             unit_price,
             tshirt_size,
-            tshirt_color
+            tshirt_color,
+            tshirt_style,
+            tshirt_gender,
+            preview_front,
+            preview_back
           )
         `)
-        .eq('is_deleted', false)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching orders:', error);
+        throw error;
+      }
+      
+      console.log('Fetched orders:', data); // 添加日志以便调试
       return data;
     },
-    staleTime: 1000 * 60 * 5, // 5分钟缓存
-    gcTime: 1000 * 60 * 30, // 30分钟后清除缓存
   });
 
   // 格式化订单状态
@@ -76,7 +83,7 @@ export default function Orders() {
           </Button>
         </div>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <Table>
           <TableHeader>
@@ -109,7 +116,14 @@ export default function Orders() {
                   <TableCell>{order.recipient_name || '-'}</TableCell>
                   <TableCell>¥{order.total_amount}</TableCell>
                   <TableCell>
-                    <span className="px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                      order.status === 'pending_payment' ? 'bg-blue-100 text-blue-800' :
+                      order.status === 'paid' ? 'bg-green-100 text-green-800' :
+                      order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                      order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                      order.status === 'delivered' ? 'bg-gray-100 text-gray-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
                       {formatOrderStatus(order.status)}
                     </span>
                   </TableCell>
