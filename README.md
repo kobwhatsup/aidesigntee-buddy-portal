@@ -1,69 +1,148 @@
-# Welcome to your Lovable project
+# AIDESIGNTEE 后台管理系统
 
-## Project info
+## 项目简介
 
-**URL**: https://lovable.dev/projects/9e8e406d-05fc-47af-837a-b4d637539b21
+AIDESIGNTEE后台管理系统是一个现代化的企业级管理平台，用于管理AIDESIGNTEE T恤定制电商平台的各项业务。系统采用模块化设计，提供完整的数据分析、订单管理、用户管理、设计管理等功能。
 
-## How can I edit this code?
+## 功能模块
 
-There are several ways of editing your application.
+### 1. 数据统计与分析
+- 销售数据概览
+- 用户数据分析
+- 设计数据分析
 
-**Use Lovable**
+### 2. 用户管理
+- 用户列表管理
+- 设计师管理
+- 用户反馈处理
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9e8e406d-05fc-47af-837a-b4d637539b21) and start prompting.
+### 3. 订单管理
+- 订单列表与处理
+- 发货管理
+- 支付管理
 
-Changes made via Lovable will be committed automatically to this repo.
+### 4. 设计管理
+- 设计作品管理
+- 设计质量控制
+- 设计推广
 
-**Use your preferred IDE**
+### 5. 商品管理
+- T恤管理
+- 库存管理
+- 价格管理
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 6. 网站管理
+- 内容管理
+- 系统设置
+- 权限管理
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 7. 营销管理
+- 活动管理
+- 会员管理
+- 营销数据分析
 
-Follow these steps:
+### 8. 财务管理
+- 收入统计
+- 支出管理
+- 财务报表
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 技术栈
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- 前端框架：React + TypeScript
+- UI组件：shadcn/ui
+- 样式解决方案：Tailwind CSS
+- 构建工具：Vite
+- 后端服务：Supabase
+- 状态管理：@tanstack/react-query
+- 图表库：Recharts
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 开发环境配置
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 系统要求
+- Node.js 18.0.0 或更高版本
+- npm 9.0.0 或更高版本
+
+### 安装步骤
+
+1. 克隆项目
+```bash
+git clone <项目地址>
+cd aidesigntee-admin
+```
+
+2. 安装依赖
+```bash
+npm install
+```
+
+3. 启动开发服务器
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+4. 构建生产版本
+```bash
+npm run build
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 项目结构
 
-**Use GitHub Codespaces**
+```
+src/
+  ├── components/        # UI组件
+  ├── pages/            # 页面组件
+  ├── hooks/            # 自定义Hook
+  ├── lib/              # 工具函数
+  ├── integrations/     # 第三方集成
+  └── types/            # TypeScript类型定义
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 数据库表结构
 
-## What technologies are used for this project?
+主要数据表：
+- admin_users: 管理员用户表
+- orders: 订单表
+- products: 商品表
+- design_drafts: 设计草稿表
+- categories: 分类表
+- profiles: 用户档案表
 
-This project is built with .
+## 部署说明
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. 确保环境变量配置正确
+2. 执行生产环境构建
+3. 部署到您选择的托管平台
 
-## How can I deploy this project?
+## 开发规范
 
-Simply open [Lovable](https://lovable.dev/projects/9e8e406d-05fc-47af-837a-b4d637539b21) and click on Share -> Publish.
+- 遵循TypeScript类型定义
+- 使用ESLint进行代码检查
+- 遵循组件化开发原则
+- 保持代码简洁可维护
 
-## I want to use a custom domain - is that possible?
+## 贡献指南
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+1. Fork 项目
+2. 创建特性分支
+3. 提交变更
+4. 推送到分支
+5. 创建Pull Request
+
+## 版本历史
+
+- v0.1.0 - 初始版本
+  - 基础框架搭建
+  - 核心功能实现
+
+## 许可证
+
+[MIT License](LICENSE)
+
+## 联系方式
+
+- 项目维护者：[您的名字]
+- 邮箱：[您的邮箱]
+
+## 致谢
+
+感谢所有为这个项目做出贡献的开发者。
