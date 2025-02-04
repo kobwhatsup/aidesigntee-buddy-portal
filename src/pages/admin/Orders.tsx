@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Filter } from "lucide-react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['admin-orders'],
@@ -47,11 +49,6 @@ export default function Orders() {
       payment_timeout: '支付超时'
     };
     return statusMap[status] || status;
-  };
-
-  // 计算订单总金额
-  const calculateTotal = (items: any[]) => {
-    return items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
   };
 
   const filteredOrders = orders?.filter(order => 
@@ -120,7 +117,11 @@ export default function Orders() {
                     {format(new Date(order.created_at), 'yyyy-MM-dd HH:mm')}
                   </TableCell>
                   <TableCell>
-                    <Button variant="link" className="text-blue-600 hover:text-blue-800">
+                    <Button 
+                      variant="link" 
+                      className="text-blue-600 hover:text-blue-800"
+                      onClick={() => navigate(`/admin/orders/${order.id}`)}
+                    >
                       查看详情
                     </Button>
                   </TableCell>
