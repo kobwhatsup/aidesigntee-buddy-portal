@@ -1,7 +1,10 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { ChartBar, ShoppingCart, Users, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ChartBar, ShoppingCart, Users, CheckCircle, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 const navigation = [
   { name: "数据概览", href: "/admin", icon: ChartBar },
@@ -13,10 +16,70 @@ const navigation = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // 检查管理员权限
+  const { data: adminUser, isLoading } = useQuery({
+    queryKey: ['admin-auth'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('未登录');
+
+      const { data: adminData, error: adminError } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (adminError || !adminData) {
+        throw new Error('没有管理员权限');
+      }
+
+      return adminData;
+    },
+  });
+
+  useEffect(() => {
+    if (!isLoading && !adminUser) {
+      navigate('/admin/login');
+    }
+  }, [adminUser, isLoading, navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "已退出登录",
+        description: "期待您的再次访问！",
+      });
+      navigate('/admin/login');
+    } catch (error: any) {
+      toast({
+        title: "退出失败",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!adminUser) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* 侧边栏 */}
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-200 ease-in-out",
@@ -71,10 +134,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Link>
             );
           })}
+          
+          <button
+            onClick={handleLogout}
+            className="w-full group flex items-center px-2 py-2 text-base font-medium rounded-md text-red-600 hover:bg-red-50"
+          >
+            <LogOut className="mr-4 h-6 w-6" />
+            退出登录
+          </button>
         </nav>
       </div>
 
-      {/* 主内容区 */}
       <div
         className={cn(
           "lg:pl-64 flex flex-col min-h-screen transition-all duration-200",
