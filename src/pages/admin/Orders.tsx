@@ -7,15 +7,38 @@ import { Button } from "@/components/ui/button";
 import { Search, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const { toast } = useToast();
 
+  // 首先检查当前用户是否为管理员
+  const { data: adminCheck } = useQuery({
+    queryKey: ['admin-check'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('未登录');
+      
+      const { data: adminUser, error: adminError } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (adminError || !adminUser) {
+        throw new Error('没有管理员权限');
+      }
+
+      return adminUser;
+    },
+  });
+
+  // 获取订单列表
   const { data: orders, isLoading } = useQuery({
     queryKey: ['admin-orders'],
     queryFn: async () => {
-      // 移除 is_deleted 条件，因为这可能会过滤掉一些订单
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -35,12 +58,18 @@ export default function Orders() {
 
       if (error) {
         console.error('Error fetching orders:', error);
+        toast({
+          title: "获取订单失败",
+          description: error.message,
+          variant: "destructive",
+        });
         throw error;
       }
       
-      console.log('Fetched orders:', data); // 添加日志以便调试
+      console.log('Fetched orders:', data);
       return data;
     },
+    enabled: !!adminCheck, // 只有在确认是管理员后才获取订单
   });
 
   // 格式化订单状态
@@ -62,6 +91,15 @@ export default function Orders() {
     order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.recipient_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (!adminCheck) {
+    return (
+      <div className="p-6 text-center">
+        <h2 className="text-xl font-semibold text-red-600">无权访问</h2>
+        <p className="mt-2 text-gray-600">您需要管理员权限才能访问此页面</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
