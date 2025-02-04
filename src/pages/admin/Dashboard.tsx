@@ -36,7 +36,7 @@ export default function Dashboard() {
       const { data: totalAmount } = await supabase
         .from('orders')
         .select('total_amount')
-        .eq('status', 'completed');
+        .eq('status', 'delivered');  // 修改这里，使用 'delivered' 而不是 'completed'
 
       const totalSales = totalAmount?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
 
