@@ -1,13 +1,12 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { ChartBar, Users, ShoppingCart, CheckCircle, Calendar, DollarSign, Package, UserPlus } from "lucide-react";
+import { ChartBar, Users, ShoppingCart, Calendar, DollarSign, Package, UserPlus, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   ChartContainer, 
   ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent 
 } from "@/components/ui/chart";
 import { 
   AreaChart, 
@@ -17,14 +16,15 @@ import {
   CartesianGrid,
   BarChart,
   Bar,
-  Tooltip
+  Tooltip,
+  PieChart,
+  Pie,
+  Cell
 } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
-import { addDays, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, format, subDays, subMonths, subYears } from "date-fns";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { addDays, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, format, subDays, subMonths, subYears } from "date-fns";
 
-// 时间区间类型定义
 type TimeRange = 'today' | 'yesterday' | 'this_month' | 'last_month' | 'this_year' | 'custom';
 
 export default function Dashboard() {
@@ -80,7 +80,7 @@ export default function Dashboard() {
       // 订单统计
       const { data: orders } = await supabase
         .from('orders')
-        .select('total_amount, status')
+        .select('total_amount, status, created_at')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
@@ -91,17 +91,33 @@ export default function Dashboard() {
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString());
 
+      // 设计稿统计
+      const { count: designs } = await supabase
+        .from('design_drafts')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString());
+
       // 计算订单相关数据
       const totalOrders = orders?.length || 0;
       const totalSales = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
       const completedOrders = orders?.filter(order => order.status === 'delivered').length || 0;
+      const pendingOrders = orders?.filter(order => order.status === 'pending_payment').length || 0;
+      const processingOrders = orders?.filter(order => ['paid', 'processing', 'shipped'].includes(order.status)).length || 0;
+
+      // 计算平均订单金额
+      const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
       return {
         newUsers: newUsers || 0,
         totalOrders,
         totalSales,
         completedOrders,
-        cartItems: cartItems || 0
+        pendingOrders,
+        processingOrders,
+        cartItems: cartItems || 0,
+        designs: designs || 0,
+        avgOrderValue
       };
     }
   });
@@ -115,7 +131,7 @@ export default function Dashboard() {
       // 获取订单数据
       const { data: orders } = await supabase
         .from('orders')
-        .select('created_at, total_amount')
+        .select('created_at, total_amount, status')
         .gte('created_at', start.toISOString())
         .lte('created_at', end.toISOString())
         .order('created_at');
@@ -141,17 +157,29 @@ export default function Dashboard() {
         return acc;
       }, {});
 
+      // 订单状态分布
+      const orderStatusData = orders?.reduce((acc: any, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {});
+
       // 合并数据
       const dates = new Set([
         ...Object.keys(salesByDay || {}),
         ...Object.keys(usersByDay || {})
       ]);
 
-      return Array.from(dates).map(date => ({
-        date,
-        sales: salesByDay?.[date] || 0,
-        users: usersByDay?.[date] || 0
-      })).sort((a, b) => a.date.localeCompare(b.date));
+      return {
+        trends: Array.from(dates).map(date => ({
+          date,
+          sales: salesByDay?.[date] || 0,
+          users: usersByDay?.[date] || 0
+        })).sort((a, b) => a.date.localeCompare(b.date)),
+        orderStatus: Object.entries(orderStatusData || {}).map(([name, value]) => ({
+          name,
+          value
+        }))
+      };
     }
   });
 
@@ -161,30 +189,47 @@ export default function Dashboard() {
       value: statsData?.newUsers?.toString() || "0",
       icon: UserPlus,
       change: "+23%",
-      changeType: "increase",
+      changeType: "increase" as const,
     },
     {
       name: "订单总数",
       value: statsData?.totalOrders?.toString() || "0",
       icon: Package,
       change: statsData?.completedOrders ? `已完成: ${statsData.completedOrders}` : "0",
-      changeType: "neutral",
+      changeType: "neutral" as const,
     },
     {
       name: "销售额",
       value: statsData?.totalSales ? `¥${statsData.totalSales.toFixed(2)}` : "¥0",
       icon: DollarSign,
-      change: "+15%",
-      changeType: "increase",
+      change: `平均订单: ¥${(statsData?.avgOrderValue || 0).toFixed(2)}`,
+      changeType: "increase" as const,
     },
     {
       name: "购物车商品",
       value: statsData?.cartItems?.toString() || "0",
       icon: ShoppingCart,
       change: "待结算",
-      changeType: "neutral",
+      changeType: "neutral" as const,
     },
+    {
+      name: "设计稿数量",
+      value: statsData?.designs?.toString() || "0",
+      icon: ChartBar,
+      change: "新增",
+      changeType: "neutral" as const,
+    },
+    {
+      name: "待处理订单",
+      value: statsData?.processingOrders?.toString() || "0",
+      icon: Package,
+      change: `待付款: ${statsData?.pendingOrders || 0}`,
+      changeType: "neutral" as const,
+    }
   ];
+
+  // 饼图颜色
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
   return (
     <div className="space-y-6">
@@ -220,7 +265,7 @@ export default function Dashboard() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
           <Card key={stat.name} className="p-6">
             <div className="flex items-center">
@@ -266,7 +311,7 @@ export default function Dashboard() {
                 },
               }}
             >
-              <AreaChart data={trendsData || []}>
+              <AreaChart data={trendsData?.trends || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
@@ -299,7 +344,7 @@ export default function Dashboard() {
                 },
               }}
             >
-              <BarChart data={trendsData || []}>
+              <BarChart data={trendsData?.trends || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
@@ -312,6 +357,54 @@ export default function Dashboard() {
                 />
               </BarChart>
             </ChartContainer>
+          </div>
+        </Card>
+
+        {/* 订单状态分布图表 */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">订单状态分布</h2>
+          <div className="h-[300px] flex items-center justify-center">
+            <ChartContainer
+              config={{
+                status: {
+                  label: "订单状态",
+                  theme: {
+                    light: "#8884d8",
+                    dark: "#8884d8",
+                  },
+                },
+              }}
+            >
+              <PieChart width={400} height={300}>
+                <Pie
+                  data={trendsData?.orderStatus || []}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {trendsData?.orderStatus?.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ChartContainer>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {trendsData?.orderStatus?.map((entry: any, index: number) => (
+              <div key={entry.name} className="flex items-center">
+                <div 
+                  className="w-3 h-3 rounded-full mr-2" 
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <span className="text-sm text-gray-600">
+                  {entry.name}: {entry.value}
+                </span>
+              </div>
+            ))}
           </div>
         </Card>
       </div>
