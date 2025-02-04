@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { ChartBar, Users, ShoppingCart, CheckCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const stats = [
