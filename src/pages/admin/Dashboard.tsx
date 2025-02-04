@@ -1,40 +1,14 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { ChartBar, Users, ShoppingCart, Calendar, DollarSign, Package, UserPlus, TrendingUp } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { ChartBar, Users, ShoppingCart, DollarSign, Package, UserPlus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  ChartContainer, 
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid,
-  BarChart,
-  Bar,
-  Tooltip,
-  PieChart,
-  Pie,
-  Cell
-} from "recharts";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { addDays, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, format, subDays, subMonths, subYears } from "date-fns";
-
-type TimeRange = 'today' | 'yesterday' | 'this_month' | 'last_month' | 'this_year' | 'custom';
-type ChangeType = 'increase' | 'decrease' | 'neutral';
-
-type StatItem = {
-  name: string;
-  value: string;
-  icon: React.ElementType;
-  change: string;
-  changeType: ChangeType;
-};
+import { addDays, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, format, subDays, subMonths } from "date-fns";
+import { TimeRangeSelector } from "@/components/admin/dashboard/TimeRangeSelector";
+import { StatsCard } from "@/components/admin/dashboard/StatsCard";
+import { SalesChart } from "@/components/admin/dashboard/SalesChart";
+import { UserGrowthChart } from "@/components/admin/dashboard/UserGrowthChart";
+import { OrderStatusChart } from "@/components/admin/dashboard/OrderStatusChart";
+import { TimeRange, StatItem } from "@/types/dashboard";
 
 export default function Dashboard() {
   const [timeRange, setTimeRange] = useState<TimeRange>('today');
@@ -129,7 +103,6 @@ export default function Dashboard() {
     }
   });
 
-  // 获取趋势数据
   const { data: trendsData } = useQuery({
     queryKey: ['dashboard-trends', timeRange, customDateRange],
     queryFn: async () => {
@@ -235,184 +208,28 @@ export default function Dashboard() {
     }
   ];
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">数据概览</h1>
-        
-        <div className="flex items-center gap-4">
-          <Select value={timeRange} onValueChange={(value: TimeRange) => setTimeRange(value)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="选择时间范围" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">今日</SelectItem>
-              <SelectItem value="yesterday">昨日</SelectItem>
-              <SelectItem value="this_month">本月</SelectItem>
-              <SelectItem value="last_month">上月</SelectItem>
-              <SelectItem value="this_year">今年</SelectItem>
-              <SelectItem value="custom">自定义</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {timeRange === 'custom' && (
-            <DateRangePicker
-              from={customDateRange.from}
-              to={customDateRange.to}
-              onSelect={(range) => {
-                if (range?.from && range?.to) {
-                  setCustomDateRange({ from: range.from, to: range.to });
-                }
-              }}
-            />
-          )}
-        </div>
+        <TimeRangeSelector
+          timeRange={timeRange}
+          customDateRange={customDateRange}
+          onTimeRangeChange={setTimeRange}
+          onCustomDateRangeChange={setCustomDateRange}
+        />
       </div>
       
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
-          <Card key={stat.name} className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <stat.icon className="h-8 w-8 text-gray-400" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {stat.value}
-                </p>
-                <p
-                  className={cn(
-                    "text-sm",
-                    stat.changeType === "increase"
-                      ? "text-green-600"
-                      : stat.changeType === "decrease"
-                      ? "text-red-600"
-                      : "text-gray-600"
-                  )}
-                >
-                  {stat.change}
-                </p>
-              </div>
-            </div>
-          </Card>
+          <StatsCard key={stat.name} stat={stat} />
         ))}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* 销售趋势图表 */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">销售趋势</h2>
-          <div className="h-[300px]">
-            <ChartContainer
-              config={{
-                sales: {
-                  label: "销售额",
-                  theme: {
-                    light: "#0ea5e9",
-                    dark: "#38bdf8",
-                  },
-                },
-              }}
-            >
-              <AreaChart data={trendsData?.trends || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Area
-                  type="monotone"
-                  dataKey="sales"
-                  name="sales"
-                  stroke="#0ea5e9"
-                  fill="#0ea5e9"
-                  fillOpacity={0.2}
-                />
-              </AreaChart>
-            </ChartContainer>
-          </div>
-        </Card>
-
-        {/* 用户增长图表 */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">用户增长</h2>
-          <div className="h-[300px]">
-            <ChartContainer
-              config={{
-                users: {
-                  label: "新增用户",
-                  theme: {
-                    light: "#10b981",
-                    dark: "#34d399",
-                  },
-                },
-              }}
-            >
-              <BarChart data={trendsData?.trends || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Bar
-                  dataKey="users"
-                  name="users"
-                  fill="#10b981"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ChartContainer>
-          </div>
-        </Card>
-
-        {/* 订单状态分布图表 */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold mb-4">订单状态分布</h2>
-          <div className="h-[300px] flex items-center justify-center">
-            <ChartContainer
-              config={{
-                status: {
-                  label: "订单状态",
-                  theme: {
-                    light: "#8884d8",
-                    dark: "#8884d8",
-                  },
-                },
-              }}
-            >
-              <PieChart width={400} height={300}>
-                <Pie
-                  data={trendsData?.orderStatus || []}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {trendsData?.orderStatus?.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ChartContainer>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {trendsData?.orderStatus?.map((entry: any, index: number) => (
-              <div key={entry.name} className="flex items-center">
-                <div 
-                  className="w-3 h-3 rounded-full mr-2" 
-                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                />
-                <span className="text-sm text-gray-600">
-                  {entry.name}: {entry.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </Card>
+        <SalesChart data={trendsData?.trends || []} />
+        <UserGrowthChart data={trendsData?.trends || []} />
+        <OrderStatusChart data={trendsData?.orderStatus || []} />
       </div>
     </div>
   );
