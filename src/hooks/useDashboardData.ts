@@ -33,7 +33,7 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
     }
   };
 
-  const { data: statsData } = useQuery({
+  const { data: statsData, isLoading: isStatsLoading } = useQuery({
     queryKey: ['dashboard-stats', timeRange, customDateRange],
     queryFn: async () => {
       const { start, end } = getTimeRange();
@@ -83,7 +83,7 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
     }
   });
 
-  const { data: trendsData } = useQuery({
+  const { data: trendsData, isLoading: isTrendsLoading } = useQuery({
     queryKey: ['dashboard-trends', timeRange, customDateRange],
     queryFn: async () => {
       const { start, end } = getTimeRange();
@@ -138,5 +138,9 @@ export const useDashboardData = (timeRange: TimeRange, customDateRange: { from: 
     }
   });
 
-  return { statsData, trendsData };
+  return { 
+    statsData, 
+    trendsData,
+    isLoading: isStatsLoading || isTrendsLoading 
+  };
 };

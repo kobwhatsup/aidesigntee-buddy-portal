@@ -7,6 +7,7 @@ import { OrderStatusChart } from "@/components/admin/dashboard/OrderStatusChart"
 import { TimeRange } from "@/types/dashboard";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { getStatsConfig } from "@/config/dashboardStats";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
   const [timeRange, setTimeRange] = useState<TimeRange>('today');
@@ -15,8 +16,46 @@ export default function Dashboard() {
     to: new Date()
   });
 
-  const { statsData, trendsData } = useDashboardData(timeRange, customDateRange);
+  const { statsData, trendsData, isLoading } = useDashboardData(timeRange, customDateRange);
   const stats = getStatsConfig(statsData);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-10 w-48" />
+        </div>
+        
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((index) => (
+            <div key={index} className="p-6 rounded-lg border">
+              <div className="flex items-center">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="ml-4 space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="p-6 rounded-lg border">
+            <Skeleton className="h-[300px]" />
+          </div>
+          <div className="p-6 rounded-lg border">
+            <Skeleton className="h-[300px]" />
+          </div>
+          <div className="p-6 rounded-lg border">
+            <Skeleton className="h-[300px]" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
