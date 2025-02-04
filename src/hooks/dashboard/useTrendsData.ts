@@ -56,7 +56,7 @@ export const useTrendsData = (timeRange: { start: Date; end: Date }) => {
       };
     },
     staleTime: 5 * 60 * 1000, // 数据5分钟内保持新鲜
-    cacheTime: 30 * 60 * 1000, // 缓存保留30分钟
+    gcTime: 30 * 60 * 1000, // 缓存保留30分钟
     refetchOnWindowFocus: false, // 窗口获得焦点时不自动重新获取
     refetchOnMount: true, // 组件挂载时重新获取
   });
