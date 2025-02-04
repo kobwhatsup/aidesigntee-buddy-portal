@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { ChartBar, Users, ShoppingCart, CheckCircle } from "lucide-react";
+import { ChartBar, Users, ShoppingCart, CheckCircle, Calendar, DollarSign, Package, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,150 +17,208 @@ import {
   CartesianGrid,
   BarChart,
   Bar,
-  ResponsiveContainer,
   Tooltip
 } from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
+import { addDays, startOfDay, endOfDay, startOfMonth, endOfMonth, startOfYear, format, subDays, subMonths, subYears } from "date-fns";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+
+// 时间区间类型定义
+type TimeRange = 'today' | 'yesterday' | 'this_month' | 'last_month' | 'this_year' | 'custom';
 
 export default function Dashboard() {
-  // 获取用户统计数据
-  const { data: usersStats } = useQuery({
-    queryKey: ['users-stats'],
-    queryFn: async () => {
-      const { count: totalUsers } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+  const [timeRange, setTimeRange] = useState<TimeRange>('today');
+  const [customDateRange, setCustomDateRange] = useState<{from: Date; to: Date}>({
+    from: subDays(new Date(), 7),
+    to: new Date()
+  });
 
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  // 获取时间范围
+  const getTimeRange = () => {
+    const now = new Date();
+    switch (timeRange) {
+      case 'today':
+        return { start: startOfDay(now), end: endOfDay(now) };
+      case 'yesterday':
+        return { 
+          start: startOfDay(subDays(now, 1)), 
+          end: endOfDay(subDays(now, 1)) 
+        };
+      case 'this_month':
+        return { start: startOfMonth(now), end: endOfMonth(now) };
+      case 'last_month':
+        return { 
+          start: startOfMonth(subMonths(now, 1)), 
+          end: endOfMonth(subMonths(now, 1)) 
+        };
+      case 'this_year':
+        return { start: startOfYear(now), end: now };
+      case 'custom':
+        return { 
+          start: startOfDay(customDateRange.from), 
+          end: endOfDay(customDateRange.to) 
+        };
+      default:
+        return { start: startOfDay(now), end: endOfDay(now) };
+    }
+  };
+
+  // 获取统计数据
+  const { data: statsData } = useQuery({
+    queryKey: ['dashboard-stats', timeRange, customDateRange],
+    queryFn: async () => {
+      const { start, end } = getTimeRange();
       
+      // 用户统计
       const { count: newUsers } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .gte('created_at', thirtyDaysAgo.toISOString());
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString());
 
-      return { totalUsers, newUsers };
-    }
-  });
-
-  // 获取订单统计数据
-  const { data: ordersStats } = useQuery({
-    queryKey: ['orders-stats'],
-    queryFn: async () => {
-      const { count: totalOrders } = await supabase
+      // 订单统计
+      const { data: orders } = await supabase
         .from('orders')
-        .select('*', { count: 'exact', head: true });
+        .select('total_amount, status')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString());
 
-      const { data: totalAmount } = await supabase
-        .from('orders')
-        .select('total_amount')
-        .eq('status', 'delivered');
-
-      const totalSales = totalAmount?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-
-      return { totalOrders, totalSales };
-    }
-  });
-
-  // 获取待审核设计数量
-  const { data: designStats } = useQuery({
-    queryKey: ['designs-stats'],
-    queryFn: async () => {
-      const { count: pendingDesigns } = await supabase
-        .from('design_drafts')
+      // 购物车统计
+      const { count: cartItems } = await supabase
+        .from('cart_items')
         .select('*', { count: 'exact', head: true })
-        .eq('is_public', false);
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString());
 
-      return { pendingDesigns };
+      // 计算订单相关数据
+      const totalOrders = orders?.length || 0;
+      const totalSales = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+      const completedOrders = orders?.filter(order => order.status === 'delivered').length || 0;
+
+      return {
+        newUsers: newUsers || 0,
+        totalOrders,
+        totalSales,
+        completedOrders,
+        cartItems: cartItems || 0
+      };
     }
   });
 
-  // 获取每日销售数据
-  const { data: dailySales } = useQuery({
-    queryKey: ['daily-sales'],
+  // 获取趋势数据
+  const { data: trendsData } = useQuery({
+    queryKey: ['dashboard-trends', timeRange, customDateRange],
     queryFn: async () => {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const { start, end } = getTimeRange();
       
-      const { data } = await supabase
+      // 获取订单数据
+      const { data: orders } = await supabase
         .from('orders')
         .select('created_at, total_amount')
-        .eq('status', 'delivered')
-        .gte('created_at', thirtyDaysAgo.toISOString())
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
         .order('created_at');
 
-      const salesByDay = data?.reduce((acc: any, order) => {
-        const date = new Date(order.created_at).toLocaleDateString();
+      // 获取用户注册数据
+      const { data: users } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .order('created_at');
+
+      // 处理数据按日期分组
+      const salesByDay = orders?.reduce((acc: any, order) => {
+        const date = format(new Date(order.created_at), 'yyyy-MM-dd');
         acc[date] = (acc[date] || 0) + (order.total_amount || 0);
         return acc;
       }, {});
 
-      return Object.entries(salesByDay || {}).map(([date, amount]) => ({
-        date,
-        amount
-      }));
-    }
-  });
-
-  // 获取每日新增用户数据
-  const { data: dailyUsers } = useQuery({
-    queryKey: ['daily-users'],
-    queryFn: async () => {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const { data } = await supabase
-        .from('profiles')
-        .select('created_at')
-        .gte('created_at', thirtyDaysAgo.toISOString())
-        .order('created_at');
-
-      const usersByDay = data?.reduce((acc: any, user) => {
-        const date = new Date(user.created_at).toLocaleDateString();
+      const usersByDay = users?.reduce((acc: any, user) => {
+        const date = format(new Date(user.created_at), 'yyyy-MM-dd');
         acc[date] = (acc[date] || 0) + 1;
         return acc;
       }, {});
 
-      return Object.entries(usersByDay || {}).map(([date, count]) => ({
+      // 合并数据
+      const dates = new Set([
+        ...Object.keys(salesByDay || {}),
+        ...Object.keys(usersByDay || {})
+      ]);
+
+      return Array.from(dates).map(date => ({
         date,
-        count
-      }));
+        sales: salesByDay?.[date] || 0,
+        users: usersByDay?.[date] || 0
+      })).sort((a, b) => a.date.localeCompare(b.date));
     }
   });
 
   const stats = [
     {
-      name: "总用户数",
-      value: usersStats?.totalUsers?.toString() || "加载中...",
-      icon: Users,
-      change: usersStats?.newUsers ? `+${usersStats.newUsers}` : "...",
+      name: "新增用户",
+      value: statsData?.newUsers?.toString() || "0",
+      icon: UserPlus,
+      change: "+23%",
       changeType: "increase",
     },
     {
-      name: "总订单数",
-      value: ordersStats?.totalOrders?.toString() || "加载中...",
-      icon: ShoppingCart,
-      change: ordersStats?.totalSales ? `¥${ordersStats.totalSales.toFixed(2)}` : "...",
-      changeType: "increase",
-    },
-    {
-      name: "待审核设计",
-      value: designStats?.pendingDesigns?.toString() || "加载中...",
-      icon: CheckCircle,
-      change: "待处理",
+      name: "订单总数",
+      value: statsData?.totalOrders?.toString() || "0",
+      icon: Package,
+      change: statsData?.completedOrders ? `已完成: ${statsData.completedOrders}` : "0",
       changeType: "neutral",
     },
     {
-      name: "本月销售额",
-      value: ordersStats?.totalSales ? `¥${ordersStats.totalSales.toFixed(2)}` : "加载中...",
-      icon: ChartBar,
-      change: "+23%",
+      name: "销售额",
+      value: statsData?.totalSales ? `¥${statsData.totalSales.toFixed(2)}` : "¥0",
+      icon: DollarSign,
+      change: "+15%",
       changeType: "increase",
+    },
+    {
+      name: "购物车商品",
+      value: statsData?.cartItems?.toString() || "0",
+      icon: ShoppingCart,
+      change: "待结算",
+      changeType: "neutral",
     },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">数据概览</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">数据概览</h1>
+        
+        <div className="flex items-center gap-4">
+          <Select value={timeRange} onValueChange={(value: TimeRange) => setTimeRange(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="选择时间范围" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">今日</SelectItem>
+              <SelectItem value="yesterday">昨日</SelectItem>
+              <SelectItem value="this_month">本月</SelectItem>
+              <SelectItem value="last_month">上月</SelectItem>
+              <SelectItem value="this_year">今年</SelectItem>
+              <SelectItem value="custom">自定义</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {timeRange === 'custom' && (
+            <DateRangePicker
+              from={customDateRange.from}
+              to={customDateRange.to}
+              onSelect={(range) => {
+                if (range?.from && range?.to) {
+                  setCustomDateRange({ from: range.from, to: range.to });
+                }
+              }}
+            />
+          )}
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
@@ -208,14 +266,14 @@ export default function Dashboard() {
                 },
               }}
             >
-              <AreaChart data={dailySales || []}>
+              <AreaChart data={trendsData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Area
                   type="monotone"
-                  dataKey="amount"
+                  dataKey="sales"
                   name="sales"
                   stroke="#0ea5e9"
                   fill="#0ea5e9"
@@ -241,13 +299,13 @@ export default function Dashboard() {
                 },
               }}
             >
-              <BarChart data={dailyUsers || []}>
+              <BarChart data={trendsData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
                 <Tooltip content={<ChartTooltipContent />} />
                 <Bar
-                  dataKey="count"
+                  dataKey="users"
                   name="users"
                   fill="#10b981"
                   radius={[4, 4, 0, 0]}
