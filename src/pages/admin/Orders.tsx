@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentStatus, setCurrentStatus] = useState<string>("all");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -37,9 +38,9 @@ export default function Orders() {
 
   // 获取订单列表
   const { data: orders, isLoading } = useQuery({
-    queryKey: ['admin-orders'],
+    queryKey: ['admin-orders', currentStatus],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('orders')
         .select(`
           *,
@@ -56,6 +57,13 @@ export default function Orders() {
         `)
         .order('created_at', { ascending: false });
 
+      // 根据当前选中的状态筛选订单
+      if (currentStatus !== 'all') {
+        query = query.eq('status', currentStatus);
+      }
+
+      const { data, error } = await query;
+
       if (error) {
         console.error('Error fetching orders:', error);
         toast({
@@ -66,10 +74,9 @@ export default function Orders() {
         throw error;
       }
       
-      console.log('Fetched orders:', data);
       return data;
     },
-    enabled: !!adminCheck, // 只有在确认是管理员后才获取订单
+    enabled: !!adminCheck,
   });
 
   // 格式化订单状态
@@ -91,6 +98,14 @@ export default function Orders() {
     order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.recipient_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const orderStatusTabs = [
+    { id: 'all', label: '全部' },
+    { id: 'pending_payment', label: '待付款' },
+    { id: 'paid', label: '待发货' },
+    { id: 'shipped', label: '待收货' },
+    { id: 'refund_requested', label: '退款/售后' },
+  ];
 
   if (!adminCheck) {
     return (
@@ -119,6 +134,24 @@ export default function Orders() {
             <Filter className="h-4 w-4" />
             筛选
           </Button>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <div className="flex space-x-2 border-b">
+          {orderStatusTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setCurrentStatus(tab.id)}
+              className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+                currentStatus === tab.id
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-muted-foreground hover:text-primary'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
