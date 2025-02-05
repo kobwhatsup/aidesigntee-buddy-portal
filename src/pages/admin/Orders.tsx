@@ -9,9 +9,12 @@ import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
+// 定义订单状态类型
+type OrderStatus = 'pending_payment' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'refund_requested' | 'refunded' | 'payment_timeout' | 'all';
+
 export default function Orders() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentStatus, setCurrentStatus] = useState<string>("all");
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>("all");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -52,7 +55,9 @@ export default function Orders() {
             tshirt_style,
             tshirt_gender,
             preview_front,
-            preview_back
+            preview_back,
+            design_front,
+            design_back
           )
         `)
         .order('created_at', { ascending: false });
@@ -100,11 +105,11 @@ export default function Orders() {
   );
 
   const orderStatusTabs = [
-    { id: 'all', label: '全部' },
-    { id: 'pending_payment', label: '待付款' },
-    { id: 'paid', label: '待发货' },
-    { id: 'shipped', label: '待收货' },
-    { id: 'refund_requested', label: '退款/售后' },
+    { id: 'all' as const, label: '全部' },
+    { id: 'pending_payment' as const, label: '待付款' },
+    { id: 'paid' as const, label: '待发货' },
+    { id: 'shipped' as const, label: '待收货' },
+    { id: 'refund_requested' as const, label: '退款/售后' },
   ];
 
   if (!adminCheck) {

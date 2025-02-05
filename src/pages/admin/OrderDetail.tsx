@@ -16,7 +16,7 @@ const orderStatusMap = {
   refund_requested: "申请退款",
   refunded: "已退款",
   payment_timeout: "支付超时",
-};
+} as const;
 
 type OrderStatus = keyof typeof orderStatusMap;
 
@@ -24,9 +24,32 @@ export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
 
+  // 首先检查当前用户是否为管理员
+  const { data: adminCheck } = useQuery({
+    queryKey: ['admin-check'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('未登录');
+      
+      const { data: adminUser, error: adminError } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (adminError || !adminUser) {
+        throw new Error('没有管理员权限');
+      }
+
+      return adminUser;
+    },
+  });
+
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],
     queryFn: async () => {
+      if (!id) throw new Error("订单ID不能为空");
+
       const { data, error } = await supabase
         .from("orders")
         .select(`
@@ -48,6 +71,7 @@ export default function OrderDetail() {
       }
       return data;
     },
+    enabled: !!id && !!adminCheck,
   });
 
   if (isLoading) {
