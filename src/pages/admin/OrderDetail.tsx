@@ -1,24 +1,12 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-
-const orderStatusMap = {
-  pending_payment: "待付款",
-  paid: "已付款",
-  processing: "处理中",
-  shipped: "已发货",
-  delivered: "已送达",
-  refund_requested: "申请退款",
-  refunded: "已退款",
-  payment_timeout: "支付超时",
-} as const;
-
-type OrderStatus = keyof typeof orderStatusMap;
+import { OrderBasicInfo } from "@/components/admin/orders/OrderBasicInfo";
+import { ShippingInfo } from "@/components/admin/orders/ShippingInfo";
+import { OrderItem } from "@/components/admin/orders/OrderItem";
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -92,58 +80,8 @@ export default function OrderDetail() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>订单信息</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <span className="font-medium">订单编号：</span>
-              {order.order_number}
-            </div>
-            <div>
-              <span className="font-medium">创建时间：</span>
-              {format(new Date(order.created_at), "yyyy-MM-dd HH:mm:ss")}
-            </div>
-            <div>
-              <span className="font-medium">订单状态：</span>
-              <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                order.status === 'pending_payment' ? 'bg-blue-100 text-blue-800' :
-                order.status === 'paid' ? 'bg-green-100 text-green-800' :
-                order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
-                order.status === 'delivered' ? 'bg-gray-100 text-gray-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {orderStatusMap[order.status as OrderStatus]}
-              </span>
-            </div>
-            <div>
-              <span className="font-medium">订单金额：</span>
-              ¥{order.total_amount}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>收货信息</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <span className="font-medium">收货人：</span>
-              {order.recipient_name}
-            </div>
-            <div>
-              <span className="font-medium">联系电话：</span>
-              {order.recipient_phone}
-            </div>
-            <div>
-              <span className="font-medium">收货地址：</span>
-              {order.shipping_address}
-            </div>
-          </CardContent>
-        </Card>
+        <OrderBasicInfo order={order} />
+        <ShippingInfo order={order} />
       </div>
 
       <Card>
@@ -153,133 +91,7 @@ export default function OrderDetail() {
         <CardContent>
           <div className="space-y-6">
             {order.order_items.map((item: any) => (
-              <div
-                key={item.id}
-                className="border rounded-lg p-4"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* 商品基本信息 */}
-                  <div className="space-y-2">
-                    <div>
-                      <span className="font-medium">款式：</span>
-                      {item.tshirt_style}
-                    </div>
-                    <div>
-                      <span className="font-medium">颜色：</span>
-                      {item.tshirt_color}
-                    </div>
-                    <div>
-                      <span className="font-medium">尺码：</span>
-                      {item.tshirt_size}
-                    </div>
-                    <div>
-                      <span className="font-medium">数量：</span>
-                      {item.quantity}
-                    </div>
-                    <div>
-                      <span className="font-medium">单价：</span>
-                      ¥{item.unit_price}
-                    </div>
-                    <div>
-                      <span className="font-medium">小计：</span>
-                      ¥{item.quantity * item.unit_price}
-                    </div>
-                  </div>
-
-                  {/* 设计图展示 */}
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">正面设计：</h4>
-                      <div className="space-y-4">
-                        {/* 正面设计图 */}
-                        {item.design_front && (
-                          <div className="relative aspect-square w-full max-w-[300px] mx-auto">
-                            <img
-                              src={item.design_front}
-                              alt="正面设计图"
-                              className="object-contain w-full h-full border rounded-lg"
-                            />
-                            <Button
-                              className="absolute top-2 right-2"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => window.open(item.design_front, '_blank')}
-                            >
-                              查看原图
-                            </Button>
-                          </div>
-                        )}
-                        {/* 正面预览图 */}
-                        {item.preview_front && (
-                          <div>
-                            <h5 className="text-sm font-medium mb-2">预览效果：</h5>
-                            <div className="relative aspect-square w-full max-w-[300px] mx-auto">
-                              <img
-                                src={item.preview_front}
-                                alt="正面预览图"
-                                className="object-contain w-full h-full border rounded-lg"
-                              />
-                              <Button
-                                className="absolute top-2 right-2"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => window.open(item.preview_front, '_blank')}
-                              >
-                                查看原图
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium mb-2">背面设计：</h4>
-                      <div className="space-y-4">
-                        {/* 背面设计图 */}
-                        {item.design_back && (
-                          <div className="relative aspect-square w-full max-w-[300px] mx-auto">
-                            <img
-                              src={item.design_back}
-                              alt="背面设计图"
-                              className="object-contain w-full h-full border rounded-lg"
-                            />
-                            <Button
-                              className="absolute top-2 right-2"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => window.open(item.design_back, '_blank')}
-                            >
-                              查看原图
-                            </Button>
-                          </div>
-                        )}
-                        {/* 背面预览图 */}
-                        {item.preview_back && (
-                          <div>
-                            <h5 className="text-sm font-medium mb-2">预览效果：</h5>
-                            <div className="relative aspect-square w-full max-w-[300px] mx-auto">
-                              <img
-                                src={item.preview_back}
-                                alt="背面预览图"
-                                className="object-contain w-full h-full border rounded-lg"
-                              />
-                              <Button
-                                className="absolute top-2 right-2"
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => window.open(item.preview_back, '_blank')}
-                              >
-                                查看原图
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <OrderItem key={item.id} item={item} />
             ))}
           </div>
         </CardContent>
