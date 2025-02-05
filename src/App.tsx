@@ -7,6 +7,7 @@ import AdminLogin from "./pages/admin/Login";
 import AdminLayout from "./components/layout/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Orders from "./pages/admin/Orders";
+import OrderDetail from "./pages/admin/OrderDetail";
 import Users from "./pages/admin/Users";
 import Designs from "./pages/admin/Designs";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
             <Route path="orders" element={<Orders />} />
+            <Route path="orders/:id" element={<OrderDetail />} />
             <Route path="users" element={<Users />} />
             <Route path="designs" element={<Designs />} />
           </Route>

@@ -1,15 +1,8 @@
 import { useParams } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -30,7 +23,6 @@ type OrderStatus = keyof typeof orderStatusMap;
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order", id],
@@ -46,42 +38,17 @@ export default function OrderDetail() {
         .eq("id", id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "获取订单失败",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
       return data;
     },
-    staleTime: 1000 * 60 * 5, // 5分钟缓存
-    gcTime: 1000 * 60 * 30, // 30分钟后清除缓存
   });
-
-  const updateOrderStatus = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: OrderStatus }) => {
-      const { error } = await supabase
-        .from("orders")
-        .update({ status })
-        .eq("id", orderId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({
-        title: "订单状态已更新",
-        description: "订单状态更新成功",
-      });
-      queryClient.invalidateQueries({ queryKey: ["order", id] });
-    },
-    onError: (error) => {
-      toast({
-        title: "更新失败",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleStatusChange = (status: OrderStatus) => {
-    if (!order) return;
-    updateOrderStatus.mutate({ orderId: order.id, status });
-  };
 
   if (isLoading) {
     return (
@@ -92,31 +59,13 @@ export default function OrderDetail() {
   }
 
   if (!order) {
-    return <div>订单不存在</div>;
+    return <div className="p-6">订单不存在</div>;
   }
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">订单详情</h1>
-        <div className="flex items-center gap-4">
-          <Select
-            value={order.status}
-            onValueChange={(value: OrderStatus) => handleStatusChange(value)}
-            disabled={updateOrderStatus.isPending}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="选择订单状态" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(orderStatusMap).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -135,7 +84,14 @@ export default function OrderDetail() {
             </div>
             <div>
               <span className="font-medium">订单状态：</span>
-              <span className="px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+              <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                order.status === 'pending_payment' ? 'bg-blue-100 text-blue-800' :
+                order.status === 'paid' ? 'bg-green-100 text-green-800' :
+                order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                order.status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                order.status === 'delivered' ? 'bg-gray-100 text-gray-800' :
+                'bg-red-100 text-red-800'
+              }`}>
                 {orderStatusMap[order.status as OrderStatus]}
               </span>
             </div>
