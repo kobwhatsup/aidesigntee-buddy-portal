@@ -19,6 +19,7 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
           .getPublicUrl(`preview-images/${previewImage}`);
         
         if (data) {
+          console.log('Preview URL:', data.publicUrl); // 添加日志以便调试
           setPreviewUrl(data.publicUrl);
         }
       }
@@ -29,7 +30,7 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
 
   return (
     <div>
-      <h4 className="font-medium mb-2">{title}：</h4>
+      <h4 className="font-medium mb-2">{title}</h4>
       <div className="space-y-4">
         {designImage && (
           <div className="relative aspect-square w-full max-w-[300px] mx-auto">
