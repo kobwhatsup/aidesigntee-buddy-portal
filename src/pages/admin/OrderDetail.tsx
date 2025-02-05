@@ -24,7 +24,6 @@ export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
 
-  // 首先检查当前用户是否为管理员
   const { data: adminCheck } = useQuery({
     queryKey: ['admin-check'],
     queryFn: async () => {
@@ -190,49 +189,93 @@ export default function OrderDetail() {
                   {/* 设计图展示 */}
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium mb-2">正面设计图：</h4>
-                      {item.design_front ? (
-                        <div className="relative aspect-square w-full max-w-[300px] mx-auto">
-                          <img
-                            src={item.design_front}
-                            alt="正面设计图"
-                            className="object-contain w-full h-full border rounded-lg"
-                          />
-                          <Button
-                            className="absolute top-2 right-2"
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => window.open(item.design_front, '_blank')}
-                          >
-                            查看原图
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="text-gray-500">暂无正面设计图</div>
-                      )}
+                      <h4 className="font-medium mb-2">正面设计：</h4>
+                      <div className="space-y-4">
+                        {/* 正面设计图 */}
+                        {item.design_front && (
+                          <div className="relative aspect-square w-full max-w-[300px] mx-auto">
+                            <img
+                              src={item.design_front}
+                              alt="正面设计图"
+                              className="object-contain w-full h-full border rounded-lg"
+                            />
+                            <Button
+                              className="absolute top-2 right-2"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => window.open(item.design_front, '_blank')}
+                            >
+                              查看原图
+                            </Button>
+                          </div>
+                        )}
+                        {/* 正面预览图 */}
+                        {item.preview_front && (
+                          <div>
+                            <h5 className="text-sm font-medium mb-2">预览效果：</h5>
+                            <div className="relative aspect-square w-full max-w-[300px] mx-auto">
+                              <img
+                                src={item.preview_front}
+                                alt="正面预览图"
+                                className="object-contain w-full h-full border rounded-lg"
+                              />
+                              <Button
+                                className="absolute top-2 right-2"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => window.open(item.preview_front, '_blank')}
+                              >
+                                查看原图
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     <div>
-                      <h4 className="font-medium mb-2">背面设计图：</h4>
-                      {item.design_back ? (
-                        <div className="relative aspect-square w-full max-w-[300px] mx-auto">
-                          <img
-                            src={item.design_back}
-                            alt="背面设计图"
-                            className="object-contain w-full h-full border rounded-lg"
-                          />
-                          <Button
-                            className="absolute top-2 right-2"
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => window.open(item.design_back, '_blank')}
-                          >
-                            查看原图
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="text-gray-500">暂无背面设计图</div>
-                      )}
+                      <h4 className="font-medium mb-2">背面设计：</h4>
+                      <div className="space-y-4">
+                        {/* 背面设计图 */}
+                        {item.design_back && (
+                          <div className="relative aspect-square w-full max-w-[300px] mx-auto">
+                            <img
+                              src={item.design_back}
+                              alt="背面设计图"
+                              className="object-contain w-full h-full border rounded-lg"
+                            />
+                            <Button
+                              className="absolute top-2 right-2"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => window.open(item.design_back, '_blank')}
+                            >
+                              查看原图
+                            </Button>
+                          </div>
+                        )}
+                        {/* 背面预览图 */}
+                        {item.preview_back && (
+                          <div>
+                            <h5 className="text-sm font-medium mb-2">预览效果：</h5>
+                            <div className="relative aspect-square w-full max-w-[300px] mx-auto">
+                              <img
+                                src={item.preview_back}
+                                alt="背面预览图"
+                                className="object-contain w-full h-full border rounded-lg"
+                              />
+                              <Button
+                                className="absolute top-2 right-2"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => window.open(item.preview_back, '_blank')}
+                              >
+                                查看原图
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
