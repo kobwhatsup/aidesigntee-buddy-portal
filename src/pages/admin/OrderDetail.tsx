@@ -128,31 +128,88 @@ export default function OrderDetail() {
           <CardTitle>商品信息</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {order.order_items.map((item: any) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between border-b pb-4"
+                className="border rounded-lg p-4"
               >
-                <div className="flex items-center gap-4">
-                  {item.preview_front && (
-                    <img
-                      src={item.preview_front}
-                      alt="商品预览图"
-                      className="w-20 h-20 object-cover rounded"
-                    />
-                  )}
-                  <div>
-                    <div>款式：{item.tshirt_style}</div>
-                    <div>颜色：{item.tshirt_color}</div>
-                    <div>尺码：{item.tshirt_size}</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 商品基本信息 */}
+                  <div className="space-y-2">
+                    <div>
+                      <span className="font-medium">款式：</span>
+                      {item.tshirt_style}
+                    </div>
+                    <div>
+                      <span className="font-medium">颜色：</span>
+                      {item.tshirt_color}
+                    </div>
+                    <div>
+                      <span className="font-medium">尺码：</span>
+                      {item.tshirt_size}
+                    </div>
+                    <div>
+                      <span className="font-medium">数量：</span>
+                      {item.quantity}
+                    </div>
+                    <div>
+                      <span className="font-medium">单价：</span>
+                      ¥{item.unit_price}
+                    </div>
+                    <div>
+                      <span className="font-medium">小计：</span>
+                      ¥{item.quantity * item.unit_price}
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div>数量：{item.quantity}</div>
-                  <div>单价：¥{item.unit_price}</div>
-                  <div className="font-medium">
-                    小计：¥{item.quantity * item.unit_price}
+
+                  {/* 设计图展示 */}
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">正面设计图：</h4>
+                      {item.design_front ? (
+                        <div className="relative aspect-square w-full max-w-[300px] mx-auto">
+                          <img
+                            src={item.design_front}
+                            alt="正面设计图"
+                            className="object-contain w-full h-full border rounded-lg"
+                          />
+                          <Button
+                            className="absolute top-2 right-2"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => window.open(item.design_front, '_blank')}
+                          >
+                            查看原图
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">暂无正面设计图</div>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-medium mb-2">背面设计图：</h4>
+                      {item.design_back ? (
+                        <div className="relative aspect-square w-full max-w-[300px] mx-auto">
+                          <img
+                            src={item.design_back}
+                            alt="背面设计图"
+                            className="object-contain w-full h-full border rounded-lg"
+                          />
+                          <Button
+                            className="absolute top-2 right-2"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => window.open(item.design_back, '_blank')}
+                          >
+                            查看原图
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">暂无背面设计图</div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
