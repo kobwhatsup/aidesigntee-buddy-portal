@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { DesignPreview } from "./DesignPreview";
+import JSZip from "jszip";
 
 interface OrderItemProps {
   item: {
@@ -40,22 +41,35 @@ export function OrderItem({ item }: OrderItemProps) {
     }
 
     try {
-      for (const image of images) {
+      // 创建一个新的 ZIP 文件
+      const zip = new JSZip();
+      
+      // 下载所有图片并添加到 ZIP
+      const fetchPromises = images.map(async (image) => {
         const response = await fetch(image.url!);
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = image.filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }
+        zip.file(image.filename, blob);
+      });
+
+      // 等待所有图片下载完成
+      await Promise.all(fetchPromises);
+
+      // 生成 ZIP 文件
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      
+      // 下载 ZIP 文件
+      const url = window.URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `设计图片_${new Date().getTime()}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
 
       toast({
         title: "下载成功",
-        description: "所有图片已开始下载",
+        description: "所有图片已打包下载",
       });
     } catch (error) {
       console.error('Download error:', error);
