@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -14,12 +15,13 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
   useEffect(() => {
     async function getPreviewUrl() {
       if (previewImage) {
+        // 移除路径中多余的 preview-images 文件夹
         const { data } = supabase.storage
           .from('design-images')
-          .getPublicUrl(`preview-images/${previewImage}`);
+          .getPublicUrl(previewImage);
         
         if (data) {
-          console.log('Preview URL:', data.publicUrl); // 添加日志以便调试
+          console.log('Preview URL:', data.publicUrl);
           setPreviewUrl(data.publicUrl);
         }
       }
