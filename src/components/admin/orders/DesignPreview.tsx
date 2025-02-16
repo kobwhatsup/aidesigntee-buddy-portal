@@ -16,10 +16,10 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
     async function getPreviewUrl() {
       if (previewImage) {
         try {
-          const cleanPath = previewImage.replace(/^preview-images\//, '');
+          // 获取完整的文件路径
           const { data } = supabase.storage
             .from('design-images')
-            .getPublicUrl(cleanPath);
+            .getPublicUrl(previewImage);
           
           if (data) {
             console.log('Preview URL:', data.publicUrl);
