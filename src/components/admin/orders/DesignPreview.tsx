@@ -15,18 +15,14 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
   useEffect(() => {
     async function getPreviewUrl() {
       if (previewImage) {
-        try {
-          // 获取完整的文件路径
-          const { data } = supabase.storage
-            .from('design-images')
-            .getPublicUrl(previewImage);
-          
-          if (data) {
-            console.log('Preview URL:', data.publicUrl);
-            setPreviewUrl(data.publicUrl);
-          }
-        } catch (error) {
-          console.error('Error getting preview URL:', error);
+        // 移除路径中多余的 preview-images 文件夹
+        const { data } = supabase.storage
+          .from('design-images')
+          .getPublicUrl(previewImage);
+        
+        if (data) {
+          console.log('Preview URL:', data.publicUrl);
+          setPreviewUrl(data.publicUrl);
         }
       }
     }
