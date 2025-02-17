@@ -6,12 +6,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { User } from "@supabase/supabase-js";
 
-interface User {
-  id: string;
-  email: string;
+interface AdminUser extends User {
   created_at: string;
+  email: string;
+  last_sign_in_at?: string;
+  banned_until?: string;
   user_metadata: {
+    name?: string;
     [key: string]: any;
   };
 }
@@ -40,7 +43,7 @@ export default function Users() {
       const { data: { users }, error } = await supabase.auth.admin.listUsers();
       if (error) throw error;
 
-      return users;
+      return users as AdminUser[];
     }
   });
 
@@ -74,7 +77,7 @@ export default function Users() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user: User) => (
+            {users?.map((user: AdminUser) => (
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.email}</TableCell>
                 <TableCell>{user.user_metadata.name || '未设置'}</TableCell>
