@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +33,7 @@ export default function OrderDetail() {
     },
   });
 
-  const { data: order, isLoading } = useQuery({
+  const { data: order, isLoading, refetch } = useQuery({
     queryKey: ["order", id],
     queryFn: async () => {
       if (!id) throw new Error("订单ID不能为空");
@@ -80,7 +81,7 @@ export default function OrderDetail() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <OrderBasicInfo order={order} />
+        <OrderBasicInfo order={order} onOrderUpdated={refetch} />
         <ShippingInfo order={order} />
       </div>
 
