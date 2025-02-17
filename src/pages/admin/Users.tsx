@@ -9,19 +9,18 @@ import { Button } from "@/components/ui/button";
 
 interface User {
   id: string;
+  email: string;
   created_at: string;
-  username: string | null;
-}
-
-interface UserWithOrders extends User {
-  order_count: number;
+  user_metadata: {
+    [key: string]: any;
+  };
 }
 
 export default function Users() {
   const [isLoading, setIsLoading] = useState(false);
 
   const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users'],
+    queryKey: ['auth-users'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('未登录');
@@ -38,32 +37,10 @@ export default function Users() {
       }
 
       // 获取用户列表
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          created_at,
-          username
-        `);
-
+      const { data: { users }, error } = await supabase.auth.admin.listUsers();
       if (error) throw error;
 
-      // 获取每个用户的订单数量
-      const usersWithOrders = await Promise.all(
-        profiles.map(async (profile) => {
-          const { count } = await supabase
-            .from('orders')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', profile.id);
-
-          return {
-            ...profile,
-            order_count: count || 0
-          };
-        })
-      );
-
-      return usersWithOrders;
+      return users;
     }
   });
 
@@ -88,24 +65,32 @@ export default function Users() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>用户ID</TableHead>
-              <TableHead>用户名</TableHead>
+              <TableHead>邮箱</TableHead>
+              <TableHead>显示名称</TableHead>
               <TableHead>注册时间</TableHead>
-              <TableHead>订单数</TableHead>
+              <TableHead>最后登录</TableHead>
               <TableHead>状态</TableHead>
               <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user: UserWithOrders) => (
+            {users?.map((user: User) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.id.slice(0, 8)}</TableCell>
-                <TableCell>{user.username || '未设置'}</TableCell>
+                <TableCell className="font-medium">{user.email}</TableCell>
+                <TableCell>{user.user_metadata.name || '未设置'}</TableCell>
                 <TableCell>{format(new Date(user.created_at), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
-                <TableCell>{user.order_count}</TableCell>
                 <TableCell>
-                  <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800">
-                    正常
+                  {user.last_sign_in_at ? 
+                    format(new Date(user.last_sign_in_at), 'yyyy-MM-dd HH:mm:ss') : 
+                    '从未登录'}
+                </TableCell>
+                <TableCell>
+                  <span className={`px-2 py-1 rounded-full text-sm ${
+                    user.banned_until ? 
+                    'bg-red-100 text-red-800' : 
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {user.banned_until ? '已禁用' : '正常'}
                   </span>
                 </TableCell>
                 <TableCell>
