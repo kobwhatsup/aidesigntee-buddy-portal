@@ -1,9 +1,10 @@
 
+// Follow this setup guide to integrate the Deno runtime into your CI/CD workflow:
+// https://denoland.com/docs/runtime/manual/
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { serve } from 'https://deno.fresh.runtime.dev/server?v=0.177.0';
 import { corsHeaders } from '../_shared/cors.ts';
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
