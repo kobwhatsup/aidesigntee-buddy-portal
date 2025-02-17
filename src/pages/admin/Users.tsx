@@ -6,64 +6,58 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { User } from "@supabase/supabase-js";
+import { useToast } from "@/hooks/use-toast";
 
-interface User {
-  id: string;
+interface AdminUser extends User {
+  email: string;
   created_at: string;
-  username: string | null;
-}
-
-interface UserWithOrders extends User {
-  order_count: number;
+  last_sign_in_at?: string;
+  banned_until?: string;
+  user_metadata: {
+    name?: string;
+    [key: string]: any;
+  };
 }
 
 export default function Users() {
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users'],
+  const { data: users, isLoading: isLoadingUsers, error } = useQuery({
+    queryKey: ['auth-users'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('未登录');
-
-      // 检查管理员权限
-      const { data: adminUser, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (adminError || !adminUser) {
-        throw new Error('没有管理员权限');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        throw new Error('未登录');
       }
 
       // 获取用户列表
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          created_at,
-          username
-        `);
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/list-users`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
 
-      if (error) throw error;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || '获取用户列表失败');
+        }
 
-      // 获取每个用户的订单数量
-      const usersWithOrders = await Promise.all(
-        profiles.map(async (profile) => {
-          const { count } = await supabase
-            .from('orders')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', profile.id);
-
-          return {
-            ...profile,
-            order_count: count || 0
-          };
-        })
-      );
-
-      return usersWithOrders;
+        const data = await response.json();
+        return data.users as AdminUser[];
+      } catch (error: any) {
+        console.error('获取用户列表错误:', error);
+        toast({
+          title: "错误",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
     }
   });
 
@@ -89,36 +83,58 @@ export default function Users() {
           <TableHeader>
             <TableRow>
               <TableHead>用户ID</TableHead>
-              <TableHead>用户名</TableHead>
+              <TableHead>邮箱</TableHead>
               <TableHead>注册时间</TableHead>
-              <TableHead>订单数</TableHead>
+              <TableHead>最后登录</TableHead>
               <TableHead>状态</TableHead>
               <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user: UserWithOrders) => (
-              <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.id.slice(0, 8)}</TableCell>
-                <TableCell>{user.username || '未设置'}</TableCell>
-                <TableCell>{format(new Date(user.created_at), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
-                <TableCell>{user.order_count}</TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800">
-                    正常
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="link"
-                    className="text-blue-600 hover:text-blue-800"
-                    onClick={() => handleViewDetails(user.id)}
-                  >
-                    查看详情
-                  </Button>
+            {error ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-4 text-red-600">
+                  加载失败: {error.message}
                 </TableCell>
               </TableRow>
-            ))}
+            ) : users?.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                  暂无用户数据
+                </TableCell>
+              </TableRow>
+            ) : (
+              users?.map((user: AdminUser) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.id.slice(0, 8)}...</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{format(new Date(user.created_at), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
+                  <TableCell>
+                    {user.last_sign_in_at ? 
+                      format(new Date(user.last_sign_in_at), 'yyyy-MM-dd HH:mm:ss') : 
+                      '从未登录'}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`px-2 py-1 rounded-full text-sm ${
+                      user.banned_until ? 
+                      'bg-red-100 text-red-800' : 
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {user.banned_until ? '已禁用' : '正常'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      className="text-blue-600 hover:text-blue-800"
+                      onClick={() => handleViewDetails(user.id)}
+                    >
+                      查看详情
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
