@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { OrderBasicInfo } from "@/components/admin/orders/OrderBasicInfo";
 import { ShippingInfo } from "@/components/admin/orders/ShippingInfo";
 import { OrderItem } from "@/components/admin/orders/OrderItem";
+import { LogisticsInfo } from "@/components/admin/orders/LogisticsInfo";
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -84,6 +85,10 @@ export default function OrderDetail() {
         <OrderBasicInfo order={order} onOrderUpdated={refetch} />
         <ShippingInfo order={order} />
       </div>
+
+      {order.status !== 'pending_payment' && order.status !== 'payment_timeout' && (
+        <LogisticsInfo order={order} />
+      )}
 
       <Card>
         <CardHeader>
