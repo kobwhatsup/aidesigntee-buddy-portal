@@ -4,6 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -19,8 +26,13 @@ interface ShippingFormProps {
   onSuccess: () => void;
 }
 
+const SHIPPING_COMPANIES = [
+  { id: "sf", name: "顺丰快递" },
+  { id: "ems", name: "EMS" },
+] as const;
+
 export function ShippingForm({ orderId, isOpen, onClose, onSuccess }: ShippingFormProps) {
-  const [shippingCompany, setShippingCompany] = useState("");
+  const [shippingCompany, setShippingCompany] = useState<string>("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -38,11 +50,15 @@ export function ShippingForm({ orderId, isOpen, onClose, onSuccess }: ShippingFo
 
     setIsSubmitting(true);
     try {
+      const selectedCompany = SHIPPING_COMPANIES.find(
+        (company) => company.id === shippingCompany
+      );
+
       const { error } = await supabase
         .from("orders")
         .update({
           status: "shipped",
-          shipping_company: shippingCompany,
+          shipping_company: selectedCompany?.name,
           tracking_number: trackingNumber,
           shipped_at: new Date().toISOString(),
         })
@@ -76,12 +92,21 @@ export function ShippingForm({ orderId, isOpen, onClose, onSuccess }: ShippingFo
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="shipping-company">物流公司</Label>
-            <Input
-              id="shipping-company"
+            <Select
               value={shippingCompany}
-              onChange={(e) => setShippingCompany(e.target.value)}
-              placeholder="请输入物流公司名称"
-            />
+              onValueChange={setShippingCompany}
+            >
+              <SelectTrigger id="shipping-company">
+                <SelectValue placeholder="请选择物流公司" />
+              </SelectTrigger>
+              <SelectContent>
+                {SHIPPING_COMPANIES.map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="tracking-number">运单号</Label>
