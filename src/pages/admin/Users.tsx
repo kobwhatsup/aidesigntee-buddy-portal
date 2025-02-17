@@ -25,24 +25,25 @@ export default function Users() {
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ['auth-users'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('未登录');
-
-      // 检查管理员权限
-      const { data: adminUser, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (adminError || !adminUser) {
-        throw new Error('没有管理员权限');
-      }
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) throw new Error('未登录');
 
       // 获取用户列表
-      const { data: { users }, error } = await supabase.auth.admin.listUsers();
-      if (error) throw error;
+      const response = await fetch(
+        `${process.env.SUPABASE_URL}/functions/v1/list-users`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '获取用户列表失败');
+      }
+
+      const { users } = await response.json();
       return users as AdminUser[];
     }
   });
