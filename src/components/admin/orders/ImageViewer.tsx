@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, ZoomIn, ZoomOut, RotateCw, Maximize2, X } from "lucide-react";
+import { Download, ZoomIn, ZoomOut, RotateCw, Maximize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ImageViewerProps {
@@ -33,13 +33,36 @@ export function ImageViewer({ isOpen, onClose, imageUrl, title, fileName }: Imag
       setIsDownloading(true);
       console.log('Downloading image from URL:', imageUrl);
       
-      // 直接使用传入的URL进行下载
+      // 验证URL
+      if (!imageUrl) {
+        throw new Error('图片URL为空');
+      }
+      
+      // 创建一个临时的图片元素来测试URL是否有效
+      const testImg = new Image();
+      testImg.crossOrigin = 'anonymous';
+      
+      const testPromise = new Promise((resolve, reject) => {
+        testImg.onload = resolve;
+        testImg.onerror = () => reject(new Error('图片URL无效或无法访问'));
+        testImg.src = imageUrl;
+      });
+      
+      await testPromise;
+      
+      // 开始下载
       const response = await fetch(imageUrl);
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`下载失败: HTTP ${response.status} ${response.statusText}`);
       }
 
       const blob = await response.blob();
+      
+      // 验证下载的内容是图片
+      if (!blob.type.startsWith('image/')) {
+        throw new Error(`下载的文件不是图片格式: ${blob.type}`);
+      }
+      
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -137,12 +160,16 @@ export function ImageViewer({ isOpen, onClose, imageUrl, title, fileName }: Imag
               maxHeight: 'none',
             }}
             className="object-contain"
-            onError={() => {
+            onError={(e) => {
+              console.error('Image load error in viewer:', imageUrl);
               toast({
                 title: "图片加载失败",
                 description: "无法加载设计图，请检查文件是否存在",
                 variant: "destructive",
               });
+            }}
+            onLoad={() => {
+              console.log('Image loaded successfully in viewer:', imageUrl);
             }}
           />
         </div>

@@ -3,6 +3,7 @@ import { DesignPreview } from "./DesignPreview";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface OrderItemProps {
   item: {
@@ -22,6 +23,7 @@ interface OrderItemProps {
 
 export function OrderItem({ item }: OrderItemProps) {
   const { toast } = useToast();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // 判断是否为完整URL
   const isFullUrl = (url: string) => {
@@ -34,42 +36,51 @@ export function OrderItem({ item }: OrderItemProps) {
     
     // 如果已经是完整URL，直接返回
     if (isFullUrl(imagePath)) {
+      console.log('Image path is already a full URL:', imagePath);
       return imagePath;
     }
     
     // 如果是相对路径，构建完整的Supabase Storage URL
-    return `https://gfraqpwyfxmpzdllsfoc.supabase.co/storage/v1/object/public/design-images/${imagePath}`;
+    const fullUrl = `https://gfraqpwyfxmpzdllsfoc.supabase.co/storage/v1/object/public/design-images/${imagePath}`;
+    console.log('Generated full URL from path:', imagePath, '->', fullUrl);
+    return fullUrl;
   };
 
   const handleBatchDownload = async () => {
+    setIsDownloading(true);
     const downloads: Promise<void>[] = [];
+    let downloadCount = 0;
     
-    // 下载正面设计图
-    if (item.design_front) {
-      const url = getImageUrl(item.design_front);
-      downloads.push(downloadImage(url, "正面设计图"));
-    }
-    
-    // 下载背面设计图
-    if (item.design_back) {
-      const url = getImageUrl(item.design_back);
-      downloads.push(downloadImage(url, "背面设计图"));
-    }
-
-    if (downloads.length === 0) {
-      toast({
-        title: "没有可下载的设计图",
-        description: "该订单项目没有设计图文件",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
+      // 下载正面设计图
+      if (item.design_front) {
+        const url = getImageUrl(item.design_front);
+        console.log('Adding front design to batch download:', url);
+        downloads.push(downloadImage(url, "正面设计图"));
+        downloadCount++;
+      }
+      
+      // 下载背面设计图
+      if (item.design_back) {
+        const url = getImageUrl(item.design_back);
+        console.log('Adding back design to batch download:', url);
+        downloads.push(downloadImage(url, "背面设计图"));
+        downloadCount++;
+      }
+
+      if (downloads.length === 0) {
+        toast({
+          title: "没有可下载的设计图",
+          description: "该订单项目没有设计图文件",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await Promise.all(downloads);
       toast({
         title: "批量下载成功",
-        description: `已下载 ${downloads.length} 个设计文件`,
+        description: `已下载 ${downloadCount} 个设计文件`,
       });
     } catch (error: any) {
       console.error('Batch download error:', error);
@@ -78,6 +89,8 @@ export function OrderItem({ item }: OrderItemProps) {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -85,12 +98,23 @@ export function OrderItem({ item }: OrderItemProps) {
     try {
       console.log('Downloading image from URL:', imageUrl);
       
+      // 验证URL格式
+      if (!imageUrl || (!isFullUrl(imageUrl) && !imageUrl.includes('design-images'))) {
+        throw new Error(`无效的图片URL: ${imageUrl}`);
+      }
+      
       const response = await fetch(imageUrl);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const blob = await response.blob();
+      
+      // 检查响应是否为图片
+      if (!blob.type.startsWith('image/')) {
+        throw new Error(`下载的文件不是图片格式: ${blob.type}`);
+      }
+      
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement('a');
@@ -100,6 +124,8 @@ export function OrderItem({ item }: OrderItemProps) {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
+      console.log(`Successfully downloaded: ${title}`);
     } catch (error) {
       console.error(`下载${title}失败:`, error);
       throw new Error(`下载${title}失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -144,10 +170,11 @@ export function OrderItem({ item }: OrderItemProps) {
               <Button
                 variant="outline"
                 onClick={handleBatchDownload}
+                disabled={isDownloading}
                 className="w-full"
               >
                 <Download className="h-4 w-4 mr-2" />
-                批量下载设计图
+                {isDownloading ? "下载中..." : "批量下载设计图"}
               </Button>
             </div>
           )}
