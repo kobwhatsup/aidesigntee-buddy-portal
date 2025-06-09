@@ -25,6 +25,11 @@ export function OrderItem({ item }: OrderItemProps) {
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // 检测是否为 base64 数据格式
+  const isBase64Data = (data: string): boolean => {
+    return data.startsWith('data:image/');
+  };
+
   // 判断是否为完整URL
   const isFullUrl = (url: string) => {
     return url.startsWith('http://') || url.startsWith('https://');
@@ -33,6 +38,12 @@ export function OrderItem({ item }: OrderItemProps) {
   // 获取图片URL的函数
   const getImageUrl = (imagePath: string): string => {
     if (!imagePath) return '';
+    
+    // 如果是 base64 数据，直接返回
+    if (isBase64Data(imagePath)) {
+      console.log('Image data is base64 format');
+      return imagePath;
+    }
     
     // 如果已经是完整URL，直接返回
     if (isFullUrl(imagePath)) {
@@ -99,16 +110,31 @@ export function OrderItem({ item }: OrderItemProps) {
       console.log('Downloading image from URL:', imageUrl);
       
       // 验证URL格式
-      if (!imageUrl || (!isFullUrl(imageUrl) && !imageUrl.includes('design-images'))) {
+      if (!imageUrl) {
         throw new Error(`无效的图片URL: ${imageUrl}`);
       }
       
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+      let blob: Blob;
       
-      const blob = await response.blob();
+      if (isBase64Data(imageUrl)) {
+        // 处理 base64 数据
+        console.log('Processing base64 data for:', title);
+        const response = await fetch(imageUrl);
+        blob = await response.blob();
+      } else {
+        // 处理普通 URL
+        console.log('Processing URL data for:', title);
+        if (!isFullUrl(imageUrl) && !imageUrl.includes('design-images')) {
+          throw new Error(`无效的图片URL: ${imageUrl}`);
+        }
+        
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        blob = await response.blob();
+      }
       
       // 检查响应是否为图片
       if (!blob.type.startsWith('image/')) {

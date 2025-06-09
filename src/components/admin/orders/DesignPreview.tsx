@@ -25,6 +25,11 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
   });
   const { toast } = useToast();
 
+  // 检测是否为 base64 数据格式
+  const isBase64Data = (data: string): boolean => {
+    return data.startsWith('data:image/');
+  };
+
   // 判断是否为完整URL
   const isFullUrl = (url: string) => {
     return url.startsWith('http://') || url.startsWith('https://');
@@ -33,6 +38,12 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
   // 获取图片URL的函数 - 修复URL处理逻辑
   const getImageUrl = (imagePath: string): string => {
     if (!imagePath) return '';
+    
+    // 如果是 base64 数据，直接返回
+    if (isBase64Data(imagePath)) {
+      console.log('Image data is base64 format');
+      return imagePath;
+    }
     
     // 如果已经是完整URL，直接返回
     if (isFullUrl(imagePath)) {
@@ -46,9 +57,12 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
     return fullUrl;
   };
 
-  // 验证URL是否可访问
+  // 验证URL是否可访问（跳过 base64 数据）
   const validateImageUrl = async (url: string): Promise<boolean> => {
     try {
+      if (isBase64Data(url)) {
+        return true; // base64 数据默认有效
+      }
       const response = await fetch(url, { method: 'HEAD' });
       return response.ok;
     } catch (error) {
@@ -108,12 +122,21 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
     try {
       console.log('Starting download for:', fileName, 'from URL:', url);
       
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`下载失败: HTTP ${response.status}`);
+      let blob: Blob;
+      
+      if (isBase64Data(url)) {
+        // 处理 base64 数据
+        const response = await fetch(url);
+        blob = await response.blob();
+      } else {
+        // 处理普通 URL
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`下载失败: HTTP ${response.status}`);
+        }
+        blob = await response.blob();
       }
       
-      const blob = await response.blob();
       const downloadUrl = URL.createObjectURL(blob);
       
       const link = document.createElement('a');

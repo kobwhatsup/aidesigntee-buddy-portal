@@ -28,6 +28,11 @@ export function ImageViewer({ isOpen, onClose, imageUrl, title, fileName }: Imag
     setRotation(0);
   };
 
+  // 检测是否为 base64 数据格式
+  const isBase64Data = (data: string): boolean => {
+    return data.startsWith('data:image/');
+  };
+
   const handleDownload = async () => {
     try {
       setIsDownloading(true);
@@ -38,25 +43,37 @@ export function ImageViewer({ isOpen, onClose, imageUrl, title, fileName }: Imag
         throw new Error('图片URL为空');
       }
       
-      // 创建一个临时的图片元素来测试URL是否有效
-      const testImg = new Image();
-      testImg.crossOrigin = 'anonymous';
+      let blob: Blob;
       
-      const testPromise = new Promise((resolve, reject) => {
-        testImg.onload = resolve;
-        testImg.onerror = () => reject(new Error('图片URL无效或无法访问'));
-        testImg.src = imageUrl;
-      });
-      
-      await testPromise;
-      
-      // 开始下载
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error(`下载失败: HTTP ${response.status} ${response.statusText}`);
-      }
+      if (isBase64Data(imageUrl)) {
+        // 处理 base64 数据
+        console.log('Processing base64 image data');
+        const response = await fetch(imageUrl);
+        blob = await response.blob();
+      } else {
+        // 处理普通 URL
+        console.log('Processing URL image data');
+        
+        // 创建一个临时的图片元素来测试URL是否有效
+        const testImg = new Image();
+        testImg.crossOrigin = 'anonymous';
+        
+        const testPromise = new Promise((resolve, reject) => {
+          testImg.onload = resolve;
+          testImg.onerror = () => reject(new Error('图片URL无效或无法访问'));
+          testImg.src = imageUrl;
+        });
+        
+        await testPromise;
+        
+        // 开始下载
+        const response = await fetch(imageUrl);
+        if (!response.ok) {
+          throw new Error(`下载失败: HTTP ${response.status} ${response.statusText}`);
+        }
 
-      const blob = await response.blob();
+        blob = await response.blob();
+      }
       
       // 验证下载的内容是图片
       if (!blob.type.startsWith('image/')) {
