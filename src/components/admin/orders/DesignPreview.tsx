@@ -20,48 +20,52 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
     design: false
   });
 
-  useEffect(() => {
-    async function getImageUrls() {
-      // 获取预览图URL
-      if (previewImage) {
-        setLoadingStates(prev => ({...prev, preview: true}));
-        try {
-          const { data } = supabase.storage
-            .from('design-images')
-            .getPublicUrl(previewImage);
-          
-          if (data) {
-            console.log('Preview URL:', data.publicUrl);
-            setPreviewUrl(data.publicUrl);
-          }
-        } catch (error) {
-          console.error('Error getting preview URL:', error);
-        } finally {
-          setLoadingStates(prev => ({...prev, preview: false}));
-        }
-      }
+  // 判断是否为完整URL
+  const isFullUrl = (url: string) => {
+    return url.startsWith('http://') || url.startsWith('https://');
+  };
 
-      // 获取设计图URL
-      if (designImage) {
-        setLoadingStates(prev => ({...prev, design: true}));
-        try {
-          const { data } = supabase.storage
-            .from('design-images')
-            .getPublicUrl(designImage);
-          
-          if (data) {
-            console.log('Design URL:', data.publicUrl);
-            setDesignUrl(data.publicUrl);
-          }
-        } catch (error) {
-          console.error('Error getting design URL:', error);
-        } finally {
-          setLoadingStates(prev => ({...prev, design: false}));
-        }
+  // 获取图片URL的函数
+  const getImageUrl = (imagePath: string): string => {
+    if (!imagePath) return '';
+    
+    // 如果已经是完整URL，直接返回
+    if (isFullUrl(imagePath)) {
+      return imagePath;
+    }
+    
+    // 如果是相对路径，构建完整的Supabase Storage URL
+    return `https://gfraqpwyfxmpzdllsfoc.supabase.co/storage/v1/object/public/design-images/${imagePath}`;
+  };
+
+  useEffect(() => {
+    // 获取预览图URL
+    if (previewImage) {
+      setLoadingStates(prev => ({...prev, preview: true}));
+      try {
+        const url = getImageUrl(previewImage);
+        console.log('Preview image URL:', url);
+        setPreviewUrl(url);
+      } catch (error) {
+        console.error('Error processing preview URL:', error);
+      } finally {
+        setLoadingStates(prev => ({...prev, preview: false}));
       }
     }
 
-    getImageUrls();
+    // 获取设计图URL
+    if (designImage) {
+      setLoadingStates(prev => ({...prev, design: true}));
+      try {
+        const url = getImageUrl(designImage);
+        console.log('Design image URL:', url);
+        setDesignUrl(url);
+      } catch (error) {
+        console.error('Error processing design URL:', error);
+      } finally {
+        setLoadingStates(prev => ({...prev, design: false}));
+      }
+    }
   }, [previewImage, designImage]);
 
   const handleViewImage = (url: string, imageTitle: string, fileName?: string) => {
@@ -71,6 +75,10 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
   const handleDownloadImage = async (url: string, fileName: string) => {
     try {
       const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('图片下载失败');
+      }
+      
       const blob = await response.blob();
       const downloadUrl = URL.createObjectURL(blob);
       
@@ -83,6 +91,7 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
       URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       console.error('Download failed:', error);
+      alert('下载失败，请重试');
     }
   };
 
@@ -104,8 +113,10 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
                     src={designUrl}
                     alt={`${title}设计原图`}
                     className="object-contain w-full h-full"
+                    onLoad={() => console.log('Design image loaded successfully')}
                     onError={(e) => {
                       console.error('Failed to load design image:', designUrl);
+                      console.error('Original path:', designImage);
                       e.currentTarget.style.display = 'none';
                     }}
                   />
@@ -128,9 +139,13 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
                   </div>
                 </>
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
+                <div className="flex flex-col items-center justify-center h-full text-gray-400">
                   <AlertCircle className="h-8 w-8 mb-2" />
-                  <p className="text-sm">设计图加载失败</p>
+                  <p className="text-sm text-center">
+                    设计图加载失败
+                    <br />
+                    <span className="text-xs">路径: {designImage}</span>
+                  </p>
                 </div>
               )}
             </div>
@@ -138,39 +153,54 @@ export function DesignPreview({ title, designImage, previewImage }: DesignPrevie
         )}
 
         {/* 预览效果图 */}
-        {previewUrl && (
+        {previewImage && (
           <div>
             <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
               预览效果：
               {loadingStates.preview && <span className="text-xs text-gray-500">加载中...</span>}
             </h5>
             <div className="relative aspect-square w-full max-w-[300px] mx-auto border rounded-lg overflow-hidden bg-gray-50">
-              <img
-                src={previewUrl}
-                alt={`${title}预览图`}
-                className="object-contain w-full h-full"
-                onError={(e) => {
-                  console.error('Failed to load preview image:', previewUrl);
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <div className="absolute top-2 right-2 flex gap-1">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleViewImage(previewUrl, `${title}预览图`, `${title}-preview-${Date.now()}.png`)}
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  查看
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleDownloadImage(previewUrl, `${title}-preview-${Date.now()}.png`)}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
+              {previewUrl ? (
+                <>
+                  <img
+                    src={previewUrl}
+                    alt={`${title}预览图`}
+                    className="object-contain w-full h-full"
+                    onLoad={() => console.log('Preview image loaded successfully')}
+                    onError={(e) => {
+                      console.error('Failed to load preview image:', previewUrl);
+                      console.error('Original path:', previewImage);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleViewImage(previewUrl, `${title}预览图`, `${title}-preview-${Date.now()}.png`)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      查看
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleDownloadImage(previewUrl, `${title}-preview-${Date.now()}.png`)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                  <AlertCircle className="h-8 w-8 mb-2" />
+                  <p className="text-sm text-center">
+                    预览图加载失败
+                    <br />
+                    <span className="text-xs">路径: {previewImage}</span>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

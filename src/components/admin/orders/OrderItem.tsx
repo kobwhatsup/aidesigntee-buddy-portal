@@ -23,17 +23,46 @@ interface OrderItemProps {
 export function OrderItem({ item }: OrderItemProps) {
   const { toast } = useToast();
 
+  // 判断是否为完整URL
+  const isFullUrl = (url: string) => {
+    return url.startsWith('http://') || url.startsWith('https://');
+  };
+
+  // 获取图片URL的函数
+  const getImageUrl = (imagePath: string): string => {
+    if (!imagePath) return '';
+    
+    // 如果已经是完整URL，直接返回
+    if (isFullUrl(imagePath)) {
+      return imagePath;
+    }
+    
+    // 如果是相对路径，构建完整的Supabase Storage URL
+    return `https://gfraqpwyfxmpzdllsfoc.supabase.co/storage/v1/object/public/design-images/${imagePath}`;
+  };
+
   const handleBatchDownload = async () => {
     const downloads: Promise<void>[] = [];
     
     // 下载正面设计图
     if (item.design_front) {
-      downloads.push(downloadImage(item.design_front, "正面设计图"));
+      const url = getImageUrl(item.design_front);
+      downloads.push(downloadImage(url, "正面设计图"));
     }
     
     // 下载背面设计图
     if (item.design_back) {
-      downloads.push(downloadImage(item.design_back, "背面设计图"));
+      const url = getImageUrl(item.design_back);
+      downloads.push(downloadImage(url, "背面设计图"));
+    }
+
+    if (downloads.length === 0) {
+      toast({
+        title: "没有可下载的设计图",
+        description: "该订单项目没有设计图文件",
+        variant: "destructive",
+      });
+      return;
     }
 
     try {
@@ -43,6 +72,7 @@ export function OrderItem({ item }: OrderItemProps) {
         description: `已下载 ${downloads.length} 个设计文件`,
       });
     } catch (error: any) {
+      console.error('Batch download error:', error);
       toast({
         title: "批量下载失败",
         description: error.message,
@@ -51,9 +81,15 @@ export function OrderItem({ item }: OrderItemProps) {
     }
   };
 
-  const downloadImage = async (imagePath: string, title: string): Promise<void> => {
+  const downloadImage = async (imageUrl: string, title: string): Promise<void> => {
     try {
-      const response = await fetch(`https://gfraqpwyfxmpzdllsfoc.supabase.co/storage/v1/object/public/design-images/${imagePath}`);
+      console.log('Downloading image from URL:', imageUrl);
+      
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       
@@ -65,7 +101,8 @@ export function OrderItem({ item }: OrderItemProps) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (error) {
-      throw new Error(`下载${title}失败`);
+      console.error(`下载${title}失败:`, error);
+      throw new Error(`下载${title}失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 

@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Download, ZoomIn, ZoomOut, RotateCw, Maximize2, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface ImageViewerProps {
@@ -32,27 +31,16 @@ export function ImageViewer({ isOpen, onClose, imageUrl, title, fileName }: Imag
   const handleDownload = async () => {
     try {
       setIsDownloading(true);
+      console.log('Downloading image from URL:', imageUrl);
       
-      // 从URL中提取文件路径
-      const urlParts = imageUrl.split('/');
-      const filePath = urlParts[urlParts.length - 1];
-      
-      // 从Supabase Storage下载文件
-      const { data, error } = await supabase.storage
-        .from('design-images')
-        .download(filePath);
-
-      if (error) {
-        toast({
-          title: "下载失败",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
+      // 直接使用传入的URL进行下载
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // 创建下载链接
-      const url = URL.createObjectURL(data);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = fileName || `${title}-${Date.now()}.png`;
@@ -66,9 +54,10 @@ export function ImageViewer({ isOpen, onClose, imageUrl, title, fileName }: Imag
         description: "设计图已保存到本地",
       });
     } catch (error: any) {
+      console.error('Download error:', error);
       toast({
         title: "下载失败",
-        description: error.message,
+        description: error.message || "下载失败，请重试",
         variant: "destructive",
       });
     } finally {
