@@ -103,8 +103,8 @@ export function ABTestManager() {
     return statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
   };
 
-  const calculateConversionRate = (variant: any) => {
-    if (!variant.sent_count || variant.sent_count === 0) return 0;
+  const calculateConversionRate = (variant: any): string => {
+    if (!variant.sent_count || variant.sent_count === 0) return "0.00";
     return ((variant.conversion_count || 0) / variant.sent_count * 100).toFixed(2);
   };
 
