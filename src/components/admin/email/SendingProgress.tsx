@@ -24,7 +24,7 @@ export function SendingProgress({ campaignId }: SendingProgressProps) {
       if (error) throw error;
       return data;
     },
-    refetchInterval: campaign?.status === 'sending' ? 2000 : false,
+    refetchInterval: (data) => data?.status === 'sending' ? 2000 : false,
   });
 
   const { data: sendStats } = useQuery({
@@ -69,7 +69,7 @@ export function SendingProgress({ campaignId }: SendingProgressProps) {
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'sending':
         return <Clock className="h-5 w-5 text-blue-500 animate-spin" />;
-      case 'failed':
+      case 'cancelled':
         return <XCircle className="h-5 w-5 text-red-500" />;
       default:
         return <Clock className="h-5 w-5 text-gray-500" />;
@@ -137,8 +137,9 @@ export function SendingProgress({ campaignId }: SendingProgressProps) {
               {campaign.status === 'draft' && '草稿'}
               {campaign.status === 'sending' && '发送中'}
               {campaign.status === 'sent' && '已完成'}
-              {campaign.status === 'failed' && '失败'}
-              {campaign.status === 'partial' && '部分成功'}
+              {campaign.status === 'scheduled' && '已安排'}
+              {campaign.status === 'paused' && '已暂停'}
+              {campaign.status === 'cancelled' && '已取消'}
             </Badge>
           </div>
         </div>

@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CampaignSender } from "./CampaignSender";
 import { EmailPreview } from "./EmailPreview";
 import { CampaignStats } from "./CampaignStats";
+import { SendingProgress } from "./SendingProgress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CampaignEditorProps {
