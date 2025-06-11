@@ -269,6 +269,242 @@ export type Database = {
           },
         ]
       }
+      email_automation_rules: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          delay_minutes: number | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          template_id: string | null
+          trigger_conditions: Json | null
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          delay_minutes?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          template_id?: string | null
+          trigger_conditions?: Json | null
+          trigger_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          delay_minutes?: number | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          template_id?: string | null
+          trigger_conditions?: Json | null
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_automation_rules_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_campaigns: {
+        Row: {
+          bounced_count: number | null
+          clicked_count: number | null
+          created_at: string | null
+          created_by: string | null
+          delivered_count: number | null
+          description: string | null
+          id: string
+          name: string
+          opened_count: number | null
+          scheduled_at: string | null
+          segment_id: string | null
+          sent_at: string | null
+          sent_count: number | null
+          status: Database["public"]["Enums"]["email_campaign_status"] | null
+          template_id: string | null
+          total_recipients: number | null
+          unsubscribed_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          bounced_count?: number | null
+          clicked_count?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          delivered_count?: number | null
+          description?: string | null
+          id?: string
+          name: string
+          opened_count?: number | null
+          scheduled_at?: string | null
+          segment_id?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: Database["public"]["Enums"]["email_campaign_status"] | null
+          template_id?: string | null
+          total_recipients?: number | null
+          unsubscribed_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          bounced_count?: number | null
+          clicked_count?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          delivered_count?: number | null
+          description?: string | null
+          id?: string
+          name?: string
+          opened_count?: number | null
+          scheduled_at?: string | null
+          segment_id?: string | null
+          sent_at?: string | null
+          sent_count?: number | null
+          status?: Database["public"]["Enums"]["email_campaign_status"] | null
+          template_id?: string | null
+          total_recipients?: number | null
+          unsubscribed_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaigns_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "user_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_campaigns_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_sends: {
+        Row: {
+          bounced_at: string | null
+          campaign_id: string | null
+          clicked_at: string | null
+          created_at: string | null
+          delivered_at: string | null
+          email: string
+          error_message: string | null
+          id: string
+          opened_at: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["email_send_status"] | null
+          tracking_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bounced_at?: string | null
+          campaign_id?: string | null
+          clicked_at?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          email: string
+          error_message?: string | null
+          id?: string
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_send_status"] | null
+          tracking_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bounced_at?: string | null
+          campaign_id?: string | null
+          clicked_at?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          email?: string
+          error_message?: string | null
+          id?: string
+          opened_at?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["email_send_status"] | null
+          tracking_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_sends_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          html_content: string
+          id: string
+          is_active: boolean | null
+          name: string
+          subject: string
+          template_type: Database["public"]["Enums"]["email_template_type"]
+          text_content: string | null
+          updated_at: string | null
+          variables: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          html_content: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject: string
+          template_type: Database["public"]["Enums"]["email_template_type"]
+          text_content?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          html_content?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject?: string
+          template_type?: Database["public"]["Enums"]["email_template_type"]
+          text_content?: string | null
+          updated_at?: string | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
@@ -500,18 +736,33 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
+          bio: string | null
           created_at: string
           id: string
+          phone: string | null
+          real_name: string | null
+          updated_at: string | null
           username: string | null
         }
         Insert: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           id: string
+          phone?: string | null
+          real_name?: string | null
+          updated_at?: string | null
           username?: string | null
         }
         Update: {
+          avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           id?: string
+          phone?: string | null
+          real_name?: string | null
+          updated_at?: string | null
           username?: string | null
         }
         Relationships: []
@@ -570,6 +821,86 @@ export type Database = {
         }
         Relationships: []
       }
+      user_email_preferences: {
+        Row: {
+          created_at: string | null
+          id: string
+          marketing_emails: boolean | null
+          newsletter: boolean | null
+          notification_emails: boolean | null
+          order_emails: boolean | null
+          unsubscribed_at: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          marketing_emails?: boolean | null
+          newsletter?: boolean | null
+          notification_emails?: boolean | null
+          order_emails?: boolean | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          marketing_emails?: boolean | null
+          newsletter?: boolean | null
+          notification_emails?: boolean | null
+          order_emails?: boolean | null
+          unsubscribed_at?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_email_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_segments: {
+        Row: {
+          conditions: Json
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_dynamic: boolean | null
+          name: string
+          updated_at: string | null
+          user_count: number | null
+        }
+        Insert: {
+          conditions: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_dynamic?: boolean | null
+          name: string
+          updated_at?: string | null
+          user_count?: number | null
+        }
+        Update: {
+          conditions?: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_dynamic?: boolean | null
+          name?: string
+          updated_at?: string | null
+          user_count?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -581,6 +912,31 @@ export type Database = {
       }
     }
     Enums: {
+      email_campaign_status:
+        | "draft"
+        | "scheduled"
+        | "sending"
+        | "sent"
+        | "paused"
+        | "cancelled"
+      email_send_status:
+        | "pending"
+        | "sent"
+        | "delivered"
+        | "opened"
+        | "clicked"
+        | "bounced"
+        | "failed"
+        | "unsubscribed"
+      email_template_type:
+        | "welcome"
+        | "promotional"
+        | "notification"
+        | "order_confirmation"
+        | "order_shipped"
+        | "newsletter"
+        | "abandoned_cart"
+        | "user_activation"
       order_status:
         | "pending_payment"
         | "paid"
@@ -705,6 +1061,34 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      email_campaign_status: [
+        "draft",
+        "scheduled",
+        "sending",
+        "sent",
+        "paused",
+        "cancelled",
+      ],
+      email_send_status: [
+        "pending",
+        "sent",
+        "delivered",
+        "opened",
+        "clicked",
+        "bounced",
+        "failed",
+        "unsubscribed",
+      ],
+      email_template_type: [
+        "welcome",
+        "promotional",
+        "notification",
+        "order_confirmation",
+        "order_shipped",
+        "newsletter",
+        "abandoned_cart",
+        "user_activation",
+      ],
       order_status: [
         "pending_payment",
         "paid",
