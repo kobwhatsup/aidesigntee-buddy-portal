@@ -141,11 +141,14 @@ export function CampaignEditor({ isOpen, onClose, campaign, onSave }: CampaignEd
         </DialogHeader>
 
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="basic">基本信息</TabsTrigger>
             <TabsTrigger value="preview">邮件预览</TabsTrigger>
             <TabsTrigger value="send">发送设置</TabsTrigger>
             {campaign && <TabsTrigger value="stats">数据统计</TabsTrigger>}
+            {campaign && ['sending', 'sent', 'partial'].includes(campaign.status) && (
+              <TabsTrigger value="progress">发送进度</TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="basic">
@@ -238,6 +241,12 @@ export function CampaignEditor({ isOpen, onClose, campaign, onSave }: CampaignEd
           {campaign && (
             <TabsContent value="stats">
               <CampaignStats campaignId={campaign.id} />
+            </TabsContent>
+          )}
+
+          {campaign && ['sending', 'sent', 'partial'].includes(campaign.status) && (
+            <TabsContent value="progress">
+              <SendingProgress campaignId={campaign.id} />
             </TabsContent>
           )}
         </Tabs>
