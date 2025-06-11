@@ -24,7 +24,7 @@ export function SendingProgress({ campaignId }: SendingProgressProps) {
       if (error) throw error;
       return data;
     },
-    refetchInterval: (data) => data?.status === 'sending' ? 2000 : false,
+    refetchInterval: (query) => query.state.data?.status === 'sending' ? 2000 : false,
   });
 
   const { data: sendStats } = useQuery({
