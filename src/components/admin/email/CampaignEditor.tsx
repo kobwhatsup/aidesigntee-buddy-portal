@@ -21,6 +21,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { CampaignSender } from "./CampaignSender";
+import { EmailPreview } from "./EmailPreview";
+import { CampaignStats } from "./CampaignStats";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface CampaignEditorProps {
   isOpen: boolean;
@@ -114,7 +118,6 @@ export function CampaignEditor({ isOpen, onClose, campaign, onSave }: CampaignEd
       }
 
       onSave();
-      onClose();
     } catch (error: any) {
       toast({
         title: "操作失败",
@@ -126,82 +129,118 @@ export function CampaignEditor({ isOpen, onClose, campaign, onSave }: CampaignEd
     }
   };
 
+  const selectedTemplateId = watch('template_id');
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {campaign ? '编辑营销活动' : '创建营销活动'}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">活动名称</Label>
-            <Input
-              id="name"
-              {...register('name', { required: true })}
-              placeholder="输入活动名称"
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="basic">基本信息</TabsTrigger>
+            <TabsTrigger value="preview">邮件预览</TabsTrigger>
+            <TabsTrigger value="send">发送设置</TabsTrigger>
+            {campaign && <TabsTrigger value="stats">数据统计</TabsTrigger>}
+          </TabsList>
+
+          <TabsContent value="basic">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="name">活动名称</Label>
+                <Input
+                  id="name"
+                  {...register('name', { required: true })}
+                  placeholder="输入活动名称"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">活动描述</Label>
+                <Textarea
+                  id="description"
+                  {...register('description')}
+                  placeholder="输入活动描述"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="template_id">邮件模板</Label>
+                <Select
+                  value={watch('template_id')}
+                  onValueChange={(value) => setValue('template_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择邮件模板" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates?.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="segment_id">目标用户群</Label>
+                <Select
+                  value={watch('segment_id')}
+                  onValueChange={(value) => setValue('segment_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择用户分群" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {segments?.map((segment) => (
+                      <SelectItem key={segment.id} value={segment.id}>
+                        {segment.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end space-x-4">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  取消
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? '保存中...' : (campaign ? '更新' : '创建')}
+                </Button>
+              </div>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="preview">
+            <EmailPreview 
+              templateId={selectedTemplateId} 
+              campaignName={watch('name') || '未命名活动'} 
             />
-          </div>
+          </TabsContent>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">活动描述</Label>
-            <Textarea
-              id="description"
-              {...register('description')}
-              placeholder="输入活动描述"
-              rows={3}
-            />
-          </div>
+          <TabsContent value="send">
+            {campaign ? (
+              <CampaignSender campaign={campaign} onCampaignUpdate={onSave} />
+            ) : (
+              <div className="text-center p-8 text-gray-500">
+                请先保存活动基本信息
+              </div>
+            )}
+          </TabsContent>
 
-          <div className="space-y-2">
-            <Label htmlFor="template_id">邮件模板</Label>
-            <Select
-              value={watch('template_id')}
-              onValueChange={(value) => setValue('template_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="选择邮件模板" />
-              </SelectTrigger>
-              <SelectContent>
-                {templates?.map((template) => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="segment_id">目标用户群</Label>
-            <Select
-              value={watch('segment_id')}
-              onValueChange={(value) => setValue('segment_id', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="选择用户分群" />
-              </SelectTrigger>
-              <SelectContent>
-                {segments?.map((segment) => (
-                  <SelectItem key={segment.id} value={segment.id}>
-                    {segment.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex justify-end space-x-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              取消
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? '保存中...' : (campaign ? '更新' : '创建')}
-            </Button>
-          </div>
-        </form>
+          {campaign && (
+            <TabsContent value="stats">
+              <CampaignStats campaignId={campaign.id} />
+            </TabsContent>
+          )}
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
