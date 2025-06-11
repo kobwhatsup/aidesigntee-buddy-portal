@@ -5,14 +5,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Pause, Edit, Trash2, Zap } from "lucide-react";
+import { Plus, Play, Pause, Edit, Trash2, Zap, History, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { AutomationEditor } from "./AutomationEditor";
+import { AutomationHistory } from "./AutomationHistory";
 
 export function AutomationRules() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<any>(null);
+  const [historyRuleId, setHistoryRuleId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { data: rules, isLoading, refetch } = useQuery({
@@ -28,6 +30,36 @@ export function AutomationRules() {
 
       if (error) throw error;
       return data;
+    }
+  });
+
+  // 获取执行统计
+  const { data: executionStats } = useQuery({
+    queryKey: ['automation-execution-stats'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('email_automation_executions')
+        .select('rule_id, execution_status')
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
+      if (error) throw error;
+      
+      // 按规则ID分组统计
+      const stats: Record<string, any> = {};
+      data.forEach(execution => {
+        if (!stats[execution.rule_id]) {
+          stats[execution.rule_id] = {
+            total: 0,
+            completed: 0,
+            failed: 0,
+            pending: 0,
+          };
+        }
+        stats[execution.rule_id].total++;
+        stats[execution.rule_id][execution.execution_status]++;
+      });
+      
+      return stats;
     }
   });
 
@@ -98,6 +130,10 @@ export function AutomationRules() {
     return types[type] || type;
   };
 
+  const getRuleStats = (ruleId: string) => {
+    return executionStats?.[ruleId] || { total: 0, completed: 0, failed: 0, pending: 0 };
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-8">加载中...</div>;
   }
@@ -113,79 +149,115 @@ export function AutomationRules() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {rules?.map((rule) => (
-          <Card key={rule.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">{rule.name}</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant={rule.is_active ? "default" : "secondary"}>
-                    {rule.is_active ? "运行中" : "已停用"}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleToggleRule(rule.id, rule.is_active)}
-                  >
-                    {rule.is_active ? (
-                      <Pause className="h-4 w-4" />
-                    ) : (
-                      <Play className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-              {rule.description && (
-                <p className="text-sm text-gray-600 line-clamp-2">
-                  {rule.description}
-                </p>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-yellow-500" />
-                  <span className="text-sm font-medium">触发条件:</span>
-                  <Badge variant="outline">
-                    {getTriggerTypeLabel(rule.trigger_type)}
-                  </Badge>
-                </div>
-
-                {rule.delay_minutes > 0 && (
-                  <div className="text-sm text-gray-600">
-                    延迟发送: {rule.delay_minutes} 分钟
+        {rules?.map((rule) => {
+          const stats = getRuleStats(rule.id);
+          const successRate = stats.total > 0 ? ((stats.completed / stats.total) * 100).toFixed(1) : '0';
+          
+          return (
+            <Card key={rule.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">{rule.name}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={rule.is_active ? "default" : "secondary"}>
+                      {rule.is_active ? "运行中" : "已停用"}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleToggleRule(rule.id, rule.is_active)}
+                    >
+                      {rule.is_active ? (
+                        <Pause className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
+                </div>
+                {rule.description && (
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {rule.description}
+                  </p>
                 )}
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-yellow-500" />
+                    <span className="text-sm font-medium">触发条件:</span>
+                    <Badge variant="outline">
+                      {getTriggerTypeLabel(rule.trigger_type)}
+                    </Badge>
+                  </div>
 
-                <div className="text-sm text-gray-600">
-                  模板: {rule.email_templates?.name || '未选择'}
-                </div>
+                  {rule.delay_minutes > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock className="h-4 w-4" />
+                      延迟发送: {rule.delay_minutes} 分钟
+                    </div>
+                  )}
 
-                <div className="text-xs text-gray-500">
-                  创建时间: {format(new Date(rule.created_at), 'yyyy-MM-dd HH:mm')}
-                </div>
+                  <div className="text-sm text-gray-600">
+                    模板: {rule.email_templates?.name || '未选择'}
+                  </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEditRule(rule)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteRule(rule.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {/* 执行统计 */}
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="text-sm font-medium mb-2">近30天执行统计</div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-gray-500">总执行:</span>
+                        <span className="ml-1 font-medium">{stats.total}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">成功率:</span>
+                        <span className="ml-1 font-medium text-green-600">{successRate}%</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">完成:</span>
+                        <span className="ml-1 font-medium text-green-600">{stats.completed}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">失败:</span>
+                        <span className="ml-1 font-medium text-red-600">{stats.failed}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-gray-500">
+                    创建时间: {format(new Date(rule.created_at), 'yyyy-MM-dd HH:mm')}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setHistoryRuleId(rule.id)}
+                    >
+                      <History className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEditRule(rule)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteRule(rule.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {rules?.length === 0 && (
@@ -205,6 +277,13 @@ export function AutomationRules() {
         rule={selectedRule}
         onSave={refetch}
       />
+
+      {historyRuleId && (
+        <AutomationHistory
+          ruleId={historyRuleId}
+          onClose={() => setHistoryRuleId(null)}
+        />
+      )}
     </div>
   );
 }

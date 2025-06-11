@@ -269,6 +269,184 @@ export type Database = {
           },
         ]
       }
+      email_ab_test_variants: {
+        Row: {
+          bounce_count: number | null
+          clicked_count: number | null
+          conversion_count: number | null
+          created_at: string | null
+          delivered_count: number | null
+          id: string
+          opened_count: number | null
+          sent_count: number | null
+          subject_line: string | null
+          template_id: string | null
+          test_id: string | null
+          traffic_percentage: number | null
+          updated_at: string | null
+          variant_name: string
+        }
+        Insert: {
+          bounce_count?: number | null
+          clicked_count?: number | null
+          conversion_count?: number | null
+          created_at?: string | null
+          delivered_count?: number | null
+          id?: string
+          opened_count?: number | null
+          sent_count?: number | null
+          subject_line?: string | null
+          template_id?: string | null
+          test_id?: string | null
+          traffic_percentage?: number | null
+          updated_at?: string | null
+          variant_name: string
+        }
+        Update: {
+          bounce_count?: number | null
+          clicked_count?: number | null
+          conversion_count?: number | null
+          created_at?: string | null
+          delivered_count?: number | null
+          id?: string
+          opened_count?: number | null
+          sent_count?: number | null
+          subject_line?: string | null
+          template_id?: string | null
+          test_id?: string | null
+          traffic_percentage?: number | null
+          updated_at?: string | null
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_ab_test_variants_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_ab_test_variants_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "email_ab_tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_ab_tests: {
+        Row: {
+          campaign_id: string | null
+          confidence_level: number | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string | null
+          statistical_significance: number | null
+          status: string | null
+          test_type: string | null
+          updated_at: string | null
+          winner_variant: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          confidence_level?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date?: string | null
+          statistical_significance?: number | null
+          status?: string | null
+          test_type?: string | null
+          updated_at?: string | null
+          winner_variant?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          confidence_level?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string | null
+          statistical_significance?: number | null
+          status?: string | null
+          test_type?: string | null
+          updated_at?: string | null
+          winner_variant?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_ab_tests_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "email_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_automation_executions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          email_sent_id: string | null
+          error_message: string | null
+          executed_at: string | null
+          execution_status: string | null
+          id: string
+          rule_id: string | null
+          scheduled_at: string | null
+          trigger_event: Json | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          email_sent_id?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          execution_status?: string | null
+          id?: string
+          rule_id?: string | null
+          scheduled_at?: string | null
+          trigger_event?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          email_sent_id?: string | null
+          error_message?: string | null
+          executed_at?: string | null
+          execution_status?: string | null
+          id?: string
+          rule_id?: string | null
+          scheduled_at?: string | null
+          trigger_event?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_automation_executions_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "email_automation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_automation_rules: {
         Row: {
           created_at: string | null
@@ -397,6 +575,30 @@ export type Database = {
           },
         ]
       }
+      email_performance_metrics: {
+        Row: {
+          id: string
+          metric_data: Json | null
+          metric_type: string
+          metric_value: number
+          recorded_at: string | null
+        }
+        Insert: {
+          id?: string
+          metric_data?: Json | null
+          metric_type: string
+          metric_value: number
+          recorded_at?: string | null
+        }
+        Update: {
+          id?: string
+          metric_data?: Json | null
+          metric_type?: string
+          metric_value?: number
+          recorded_at?: string | null
+        }
+        Relationships: []
+      }
       email_sends: {
         Row: {
           bounced_at: string | null
@@ -504,6 +706,44 @@ export type Database = {
           variables?: Json | null
         }
         Relationships: []
+      }
+      email_tracking_events: {
+        Row: {
+          created_at: string | null
+          email_send_id: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_send_id?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_send_id?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_tracking_events_email_send_id_fkey"
+            columns: ["email_send_id"]
+            isOneToOne: false
+            referencedRelation: "email_sends"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_items: {
         Row: {
@@ -906,6 +1146,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_ab_test_significance: {
+        Args: { test_id: string; variant_a: string; variant_b: string }
+        Returns: number
+      }
       force_update_order_status: {
         Args: { order_id: string; new_status: string; paid_timestamp?: string }
         Returns: undefined
