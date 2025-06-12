@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -135,6 +134,26 @@ export function VisualTemplateEditor({
     return fullHTML;
   }, [elements, onContentChange]);
 
+  // 新增：应用模板功能
+  const applyTemplate = useCallback((templateElements: EmailElement[]) => {
+    setElements(templateElements);
+    setSelectedElement(null);
+  }, []);
+
+  // 新增：添加图片功能
+  const addImageFromLibrary = useCallback((imageUrl: string) => {
+    const newElement: EmailElement = {
+      id: `element-${Date.now()}`,
+      type: 'image',
+      content: imageUrl,
+      styles: getDefaultStyles('image'),
+      order: elements.length
+    };
+    
+    setElements(prev => [...prev, newElement]);
+    setSelectedElement(newElement.id);
+  }, [elements.length]);
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="h-full flex flex-col">
@@ -167,7 +186,9 @@ export function VisualTemplateEditor({
 
           <TabsContent value="visual" className="flex-1 flex gap-4">
             <div className="w-80 space-y-4">
+              <TemplatePresets onApplyTemplate={applyTemplate} />
               <EmailComponents onAddElement={addElement} />
+              <ImageLibrary onSelectImage={addImageFromLibrary} />
               <VariableManager variables={variables} />
             </div>
             

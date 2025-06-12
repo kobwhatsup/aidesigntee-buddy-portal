@@ -575,6 +575,54 @@ export type Database = {
           },
         ]
       }
+      email_images: {
+        Row: {
+          alt_text: string | null
+          created_at: string
+          file_size: number
+          filename: string
+          height: number | null
+          id: string
+          mime_type: string
+          original_filename: string
+          public_url: string
+          storage_path: string
+          tags: string[] | null
+          uploaded_by: string | null
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          created_at?: string
+          file_size: number
+          filename: string
+          height?: number | null
+          id?: string
+          mime_type: string
+          original_filename: string
+          public_url: string
+          storage_path: string
+          tags?: string[] | null
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          created_at?: string
+          file_size?: number
+          filename?: string
+          height?: number | null
+          id?: string
+          mime_type?: string
+          original_filename?: string
+          public_url?: string
+          storage_path?: string
+          tags?: string[] | null
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Relationships: []
+      }
       email_performance_metrics: {
         Row: {
           id: string
@@ -664,6 +712,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_template_presets: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          template_data: Json
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          template_data: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          template_data?: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       email_templates: {
         Row: {
