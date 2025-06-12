@@ -6,8 +6,8 @@ import {
   Image, 
   Square, 
   Minus, 
-  Header, 
-  Footer,
+  Heading1, 
+  FileText,
   Palette,
   Settings
 } from "lucide-react";
@@ -25,7 +25,7 @@ export function EmailComponents({ onAddElement }: EmailComponentsProps) {
         {
           type: 'header' as const,
           label: '标题',
-          icon: <Header className="h-6 w-6" />,
+          icon: <Heading1 className="h-6 w-6" />,
           description: '大标题文本',
           preview: '<h1 style="font-size: 24px; font-weight: bold; margin: 0;">标题示例</h1>'
         },
@@ -70,7 +70,7 @@ export function EmailComponents({ onAddElement }: EmailComponentsProps) {
         {
           type: 'footer' as const,
           label: '页脚',
-          icon: <Footer className="h-6 w-6" />,
+          icon: <FileText className="h-6 w-6" />,
           description: '页脚信息',
           preview: '<div style="font-size: 12px; color: #666; text-align: center;">页脚示例</div>'
         }

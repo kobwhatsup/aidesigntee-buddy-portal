@@ -5,8 +5,8 @@ import {
   Image, 
   Square, 
   Minus, 
-  Header, 
-  Footer,
+  Heading1, 
+  FileText,
   Monitor,
   Smartphone,
   Code,
@@ -36,7 +36,7 @@ export function EditorToolbar({
     {
       type: 'header',
       label: '标题',
-      icon: <Header className="h-4 w-4" />,
+      icon: <Heading1 className="h-4 w-4" />,
       description: '添加邮件标题'
     },
     {
@@ -66,7 +66,7 @@ export function EditorToolbar({
     {
       type: 'footer',
       label: '页脚',
-      icon: <Footer className="h-4 w-4" />,
+      icon: <FileText className="h-4 w-4" />,
       description: '添加页脚信息'
     }
   ];
