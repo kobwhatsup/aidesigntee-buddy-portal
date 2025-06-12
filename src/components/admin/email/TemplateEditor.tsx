@@ -20,7 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { VisualTemplateEditor } from "./visual/VisualTemplateEditor";
+import { Eye, Code, Palette } from "lucide-react";
 
 interface TemplateEditorProps {
   isOpen: boolean;
@@ -31,6 +34,8 @@ interface TemplateEditorProps {
 
 export function TemplateEditor({ isOpen, onClose, template, onSave }: TemplateEditorProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [htmlContent, setHtmlContent] = useState('');
+  const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual');
   const { toast } = useToast();
   const { register, handleSubmit, setValue, watch, reset } = useForm();
 
@@ -45,25 +50,50 @@ export function TemplateEditor({ isOpen, onClose, template, onSave }: TemplateEd
     { value: 'user_activation', label: '用户激活' },
   ];
 
+  // 预定义变量
+  const templateVariables = {
+    username: "用户名",
+    email: "邮箱地址", 
+    website_url: "网站首页",
+    design_url: "设计页面",
+    shop_url: "商店页面",
+    product_name: "产品名称",
+    design_title: "设计标题",
+    size: "尺寸",
+    color: "颜色",
+    price: "价格",
+    cart_url: "购物车链接",
+    dashboard_url: "用户面板",
+    order_number: "订单号",
+    quantity: "数量",
+    total_amount: "订单总额",
+    shipping_address: "收货地址",
+    update_url: "更新链接"
+  };
+
   useEffect(() => {
     if (template) {
-      reset({
+      const formData = {
         name: template.name,
         subject: template.subject,
         template_type: template.template_type,
         html_content: template.html_content,
         text_content: template.text_content,
         is_active: template.is_active,
-      });
+      };
+      reset(formData);
+      setHtmlContent(template.html_content || '');
     } else {
-      reset({
+      const defaultData = {
         name: '',
         subject: '',
         template_type: 'promotional',
         html_content: '',
         text_content: '',
         is_active: true,
-      });
+      };
+      reset(defaultData);
+      setHtmlContent('');
     }
   }, [template, reset]);
 
@@ -74,8 +104,9 @@ export function TemplateEditor({ isOpen, onClose, template, onSave }: TemplateEd
       
       const templateData = {
         ...data,
+        html_content: htmlContent,
         created_by: user?.id,
-        variables: {},
+        variables: templateVariables,
       };
 
       if (template) {
@@ -118,14 +149,33 @@ export function TemplateEditor({ isOpen, onClose, template, onSave }: TemplateEd
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {template ? '编辑邮件模板' : '创建邮件模板'}
+          <DialogTitle className="flex items-center justify-between">
+            <span>{template ? '编辑邮件模板' : '创建邮件模板'}</span>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={editorMode === 'visual' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditorMode('visual')}
+              >
+                <Palette className="h-4 w-4 mr-1" />
+                可视化
+              </Button>
+              <Button
+                variant={editorMode === 'code' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setEditorMode('code')}
+              >
+                <Code className="h-4 w-4 mr-1" />
+                代码
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* 基础信息 */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">模板名称</Label>
@@ -161,18 +211,39 @@ export function TemplateEditor({ isOpen, onClose, template, onSave }: TemplateEd
             <Input
               id="subject"
               {...register('subject', { required: true })}
-              placeholder="输入邮件主题"
+              placeholder="输入邮件主题，支持变量如 {{username}}"
             />
           </div>
 
+          {/* 内容编辑区域 */}
           <div className="space-y-2">
-            <Label htmlFor="html_content">HTML 内容</Label>
-            <Textarea
-              id="html_content"
-              {...register('html_content', { required: true })}
-              placeholder="输入邮件的HTML内容"
-              rows={10}
-            />
+            <Label>邮件内容</Label>
+            <div className="border rounded-lg" style={{ height: '600px' }}>
+              {editorMode === 'visual' ? (
+                <VisualTemplateEditor
+                  initialContent={htmlContent}
+                  onContentChange={setHtmlContent}
+                  variables={templateVariables}
+                />
+              ) : (
+                <div className="h-full flex flex-col">
+                  <div className="flex-1">
+                    <Textarea
+                      value={htmlContent}
+                      onChange={(e) => setHtmlContent(e.target.value)}
+                      placeholder="输入邮件的HTML内容，支持变量如 {{username}}"
+                      className="h-full resize-none border-0 rounded-t-lg"
+                      style={{ minHeight: '500px' }}
+                    />
+                  </div>
+                  <div className="border-t p-2 bg-gray-50 rounded-b-lg">
+                    <p className="text-xs text-gray-600">
+                      💡 支持HTML标签和变量，如：{`{{username}}, {{product_name}}, {{website_url}}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -180,7 +251,7 @@ export function TemplateEditor({ isOpen, onClose, template, onSave }: TemplateEd
             <Textarea
               id="text_content"
               {...register('text_content')}
-              placeholder="输入邮件的纯文本内容"
+              placeholder="输入邮件的纯文本内容，支持变量如 {{username}}"
               rows={5}
             />
           </div>
