@@ -37,13 +37,8 @@ export function EnhancedStatsCards({ data, isLoading, onRefresh }: EnhancedStats
 
       <MetricsGrid data={data} isLoading={isLoading} />
 
-      {/* 实时指标区域 */}
-      <RealtimeMetrics
-        onlineUsers={data?.onlineUsers || 0}
-        todayVisitors={data?.todayVisitors || 0}
-        realtimeOrders={data?.realtimeOrders || 0}
-        isLoading={isLoading}
-      />
+      {/* 实时指标区域 - 使用真实数据 */}
+      <RealtimeMetrics />
     </div>
   );
 }

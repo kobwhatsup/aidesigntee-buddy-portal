@@ -1010,6 +1010,60 @@ export type Database = {
         }
         Relationships: []
       }
+      page_visits: {
+        Row: {
+          browser: string | null
+          created_at: string | null
+          device_type: string | null
+          exit_time: string | null
+          id: string
+          os: string | null
+          page_path: string
+          page_title: string | null
+          referrer: string | null
+          screen_resolution: string | null
+          session_duration: number | null
+          session_id: string | null
+          user_id: string | null
+          visit_time: string | null
+          visitor_id: string
+        }
+        Insert: {
+          browser?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          exit_time?: string | null
+          id?: string
+          os?: string | null
+          page_path: string
+          page_title?: string | null
+          referrer?: string | null
+          screen_resolution?: string | null
+          session_duration?: number | null
+          session_id?: string | null
+          user_id?: string | null
+          visit_time?: string | null
+          visitor_id: string
+        }
+        Update: {
+          browser?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          exit_time?: string | null
+          id?: string
+          os?: string | null
+          page_path?: string
+          page_title?: string | null
+          referrer?: string | null
+          screen_resolution?: string | null
+          session_duration?: number | null
+          session_id?: string | null
+          user_id?: string | null
+          visit_time?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       payment_records: {
         Row: {
           amount: number
@@ -1281,6 +1335,81 @@ export type Database = {
         }
         Relationships: []
       }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          is_active: boolean | null
+          last_activity: string | null
+          session_id: string
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string | null
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_id: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_id?: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      visitor_stats: {
+        Row: {
+          avg_session_duration: number | null
+          bounce_rate: number | null
+          created_at: string | null
+          date: string
+          id: string
+          page_views: number | null
+          total_visitors: number | null
+          unique_visitors: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          avg_session_duration?: number | null
+          bounce_rate?: number | null
+          created_at?: string | null
+          date: string
+          id?: string
+          page_views?: number | null
+          total_visitors?: number | null
+          unique_visitors?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          avg_session_duration?: number | null
+          bounce_rate?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          page_views?: number | null
+          total_visitors?: number | null
+          unique_visitors?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1290,8 +1419,30 @@ export type Database = {
         Args: { test_id: string; variant_a: string; variant_b: string }
         Returns: number
       }
+      cleanup_inactive_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       force_update_order_status: {
         Args: { order_id: string; new_status: string; paid_timestamp?: string }
+        Returns: undefined
+      }
+      get_online_users_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      get_today_visitors_count: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      update_session_activity: {
+        Args: {
+          p_session_id: string
+          p_visitor_id: string
+          p_user_id?: string
+          p_ip_address?: unknown
+          p_user_agent?: string
+        }
         Returns: undefined
       }
     }

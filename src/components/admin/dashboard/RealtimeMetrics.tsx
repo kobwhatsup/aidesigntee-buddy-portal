@@ -2,20 +2,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Eye, ShoppingCart } from "lucide-react";
+import { useRealTimeStats } from "@/hooks/useRealTimeStats";
 
-interface RealtimeMetricsProps {
-  onlineUsers: number;
-  todayVisitors: number;
-  realtimeOrders: number;
-  isLoading: boolean;
-}
+export function RealtimeMetrics() {
+  const { onlineUsers, todayVisitors, realtimeOrders, isLoading } = useRealTimeStats();
 
-export function RealtimeMetrics({ 
-  onlineUsers, 
-  todayVisitors, 
-  realtimeOrders, 
-  isLoading 
-}: RealtimeMetricsProps) {
   if (isLoading) {
     return (
       <Card className="bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -46,7 +37,7 @@ export function RealtimeMetrics({
           <div className="w-3 h-3 bg-green-500 rounded-full mr-2 animate-pulse" />
           实时数据
           <Badge variant="secondary" className="ml-2 text-xs">
-            每30秒更新
+            真实数据
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -58,6 +49,9 @@ export function RealtimeMetrics({
               <div className="text-2xl font-bold text-blue-600">{onlineUsers}</div>
             </div>
             <div className="text-sm text-muted-foreground">在线用户</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              5分钟内活跃
+            </div>
             <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
@@ -72,6 +66,9 @@ export function RealtimeMetrics({
               <div className="text-2xl font-bold text-green-600">{todayVisitors}</div>
             </div>
             <div className="text-sm text-muted-foreground">今日访客</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              独立访客数
+            </div>
             <div className="w-full bg-green-200 rounded-full h-2 mt-2">
               <div 
                 className="bg-green-600 h-2 rounded-full transition-all duration-300" 
@@ -86,6 +83,9 @@ export function RealtimeMetrics({
               <div className="text-2xl font-bold text-purple-600">{realtimeOrders}</div>
             </div>
             <div className="text-sm text-muted-foreground">今日订单</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              所有状态订单
+            </div>
             <div className="w-full bg-purple-200 rounded-full h-2 mt-2">
               <div 
                 className="bg-purple-600 h-2 rounded-full transition-all duration-300" 
