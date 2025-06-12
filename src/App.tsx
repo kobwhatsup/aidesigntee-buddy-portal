@@ -33,7 +33,7 @@ function AppContent() {
         <Route path="orders/:id" element={<OrderDetail />} />
         <Route path="users" element={<Users />} />
         <Route path="designs" element={<Designs />} />
-        <Route path="email" element={<EmailMarketing />} />
+        <Route path="email-marketing" element={<EmailMarketing />} />
       </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
