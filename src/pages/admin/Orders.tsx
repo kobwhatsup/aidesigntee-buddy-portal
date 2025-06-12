@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,28 +115,31 @@ export default function Orders() {
 
   if (!adminCheck) {
     return (
-      <div className="p-6 text-center">
+      <div className="p-6 text-center bg-white min-h-screen">
         <h2 className="text-xl font-semibold text-red-600">无权访问</h2>
-        <p className="mt-2 text-gray-600">您需要管理员权限才能访问此页面</p>
+        <p className="mt-2 text-gray-900">您需要管理员权限才能访问此页面</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-white min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">订单管理</h1>
         <div className="flex gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
             <Input
               placeholder="搜索订单号或收件人"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
+              className="pl-10 w-64 bg-white border-gray-300 text-gray-900"
             />
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2 bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
+          >
             <Filter className="h-4 w-4" />
             筛选
           </Button>
@@ -143,15 +147,15 @@ export default function Orders() {
       </div>
 
       <div className="mb-6">
-        <div className="flex space-x-2 border-b">
+        <div className="flex space-x-2 border-b border-gray-200">
           {orderStatusTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setCurrentStatus(tab.id)}
               className={`px-4 py-2 text-sm font-medium transition-colors relative ${
                 currentStatus === tab.id
-                  ? 'text-primary border-b-2 border-primary'
-                  : 'text-muted-foreground hover:text-primary'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               {tab.label}
@@ -160,37 +164,37 @@ export default function Orders() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>订单编号</TableHead>
-              <TableHead>收件人</TableHead>
-              <TableHead>订单金额</TableHead>
-              <TableHead>订单状态</TableHead>
-              <TableHead>创建时间</TableHead>
-              <TableHead>操作</TableHead>
+            <TableRow className="bg-gray-50">
+              <TableHead className="text-gray-900 font-semibold">订单编号</TableHead>
+              <TableHead className="text-gray-900 font-semibold">收件人</TableHead>
+              <TableHead className="text-gray-900 font-semibold">订单金额</TableHead>
+              <TableHead className="text-gray-900 font-semibold">订单状态</TableHead>
+              <TableHead className="text-gray-900 font-semibold">创建时间</TableHead>
+              <TableHead className="text-gray-900 font-semibold">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8 text-gray-900">
                   加载中...
                 </TableCell>
               </TableRow>
             ) : filteredOrders?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">
+                <TableCell colSpan={6} className="text-center py-8 text-gray-900">
                   暂无订单数据
                 </TableCell>
               </TableRow>
             ) : (
               filteredOrders?.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>{order.order_number}</TableCell>
-                  <TableCell>{order.recipient_name || '-'}</TableCell>
-                  <TableCell>¥{order.total_amount}</TableCell>
+                <TableRow key={order.id} className="hover:bg-gray-50">
+                  <TableCell className="text-gray-900 font-medium">{order.order_number}</TableCell>
+                  <TableCell className="text-gray-900">{order.recipient_name || '-'}</TableCell>
+                  <TableCell className="text-gray-900 font-medium">¥{order.total_amount}</TableCell>
                   <TableCell>
                     <span className={`px-2 py-1 rounded-full text-sm font-medium ${
                       order.status === 'pending_payment' ? 'bg-blue-100 text-blue-800' :
@@ -203,13 +207,13 @@ export default function Orders() {
                       {formatOrderStatus(order.status)}
                     </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-gray-900">
                     {format(new Date(order.created_at), 'yyyy-MM-dd HH:mm')}
                   </TableCell>
                   <TableCell>
                     <Button 
                       variant="link" 
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800 p-0"
                       onClick={() => navigate(`/admin/orders/${order.id}`)}
                     >
                       查看详情

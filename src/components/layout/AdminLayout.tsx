@@ -97,21 +97,21 @@ export function AdminLayout() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-gray-600">加载中...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-900">加载中...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
-        <div className="p-6 border-b">
-          <h1 className="text-xl font-bold text-gray-800">AIDESIGNTEE</h1>
+      <div className="w-64 bg-white shadow-lg border-r border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <h1 className="text-xl font-bold text-gray-900">AIDESIGNTEE</h1>
           <p className="text-sm text-gray-600">管理后台</p>
         </div>
         
@@ -124,8 +124,8 @@ export function AdminLayout() {
                 to={item.path}
                 className={`flex items-center px-6 py-3 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'bg-primary text-primary-foreground border-r-2 border-primary'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
                 <item.icon className="h-5 w-5 mr-3" />
@@ -140,7 +140,7 @@ export function AdminLayout() {
             variant="ghost"
             size="sm"
             onClick={handleLogout}
-            className="text-gray-600 hover:text-gray-900"
+            className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
           >
             <LogOut className="h-4 w-4 mr-2" />
             退出登录
@@ -149,7 +149,7 @@ export function AdminLayout() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-gray-50">
         <Outlet />
       </div>
     </div>
