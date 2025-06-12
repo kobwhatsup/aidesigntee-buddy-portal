@@ -7,6 +7,8 @@ import { UserBehaviorAnalysis } from "@/components/admin/dashboard/UserBehaviorA
 import { SalesChart } from "@/components/admin/dashboard/SalesChart";
 import { UserGrowthChart } from "@/components/admin/dashboard/UserGrowthChart";
 import { OrderStatusChart } from "@/components/admin/dashboard/OrderStatusChart";
+import { NotificationSettings } from "@/components/admin/NotificationSettings";
+import { RealtimeOrderMonitor } from "@/components/admin/RealtimeOrderMonitor";
 import { TimeRange } from "@/types/dashboard";
 import { useDashboard } from "@/hooks/dashboard/useDashboard";
 import { useEnhancedStatsData } from "@/hooks/dashboard/useEnhancedStatsData";
@@ -48,8 +50,9 @@ export default function Dashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">核心指标</TabsTrigger>
+          <TabsTrigger value="realtime">实时监控</TabsTrigger>
           <TabsTrigger value="behavior">用户行为</TabsTrigger>
           <TabsTrigger value="advanced">高级分析</TabsTrigger>
           <TabsTrigger value="legacy">传统视图</TabsTrigger>
@@ -61,6 +64,13 @@ export default function Dashboard() {
             isLoading={isStatsLoading}
             onRefresh={handleRefresh}
           />
+        </TabsContent>
+
+        <TabsContent value="realtime" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <RealtimeOrderMonitor />
+            <NotificationSettings />
+          </div>
         </TabsContent>
 
         <TabsContent value="behavior" className="space-y-6">
