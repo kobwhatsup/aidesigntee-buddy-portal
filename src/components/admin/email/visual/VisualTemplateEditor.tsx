@@ -8,6 +8,8 @@ import { EditorToolbar } from "./EditorToolbar";
 import { EmailComponents } from "./EmailComponents";
 import { EmailPreviewPanel } from "./EmailPreviewPanel";
 import { VariableManager } from "./VariableManager";
+import { TemplatePresets } from "./TemplatePresets";
+import { ImageLibrary } from "./ImageLibrary";
 import { Eye, Code, Smartphone, Monitor } from "lucide-react";
 
 export interface EmailElement {

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Template, 
+  FileTemplate, 
   Eye, 
   Download,
   Search
@@ -85,7 +85,7 @@ export function TemplatePresets({ onApplyTemplate }: TemplatePresetsProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Template className="h-5 w-5" />
+          <FileTemplate className="h-5 w-5" />
           预设模板
         </CardTitle>
       </CardHeader>
@@ -177,7 +177,7 @@ export function TemplatePresets({ onApplyTemplate }: TemplatePresetsProps) {
 
         {filteredPresets?.length === 0 && (
           <div className="text-center py-8 text-gray-500">
-            <Template className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+            <FileTemplate className="h-12 w-12 mx-auto mb-2 text-gray-300" />
             <p>未找到匹配的模板</p>
           </div>
         )}
