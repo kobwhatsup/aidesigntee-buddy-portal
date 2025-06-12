@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import Dashboard from "./pages/admin/Dashboard";
-import AdminLayout from "./components/layout/AdminLayout";
+import { AdminLayout } from "./components/layout/AdminLayout";
 import Login from "./pages/admin/Login";
 import Orders from "./pages/admin/Orders";
 import OrderDetail from "./pages/admin/OrderDetail";
