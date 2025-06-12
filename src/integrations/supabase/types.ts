@@ -791,6 +791,62 @@ export type Database = {
         }
         Relationships: []
       }
+      email_test_sends: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          html_content: string
+          id: string
+          sent_at: string | null
+          sent_by: string | null
+          status: string | null
+          subject: string
+          template_id: string | null
+          test_email: string
+          tracking_id: string | null
+          updated_at: string | null
+          variables_used: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          html_content: string
+          id?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          subject: string
+          template_id?: string | null
+          test_email: string
+          tracking_id?: string | null
+          updated_at?: string | null
+          variables_used?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          html_content?: string
+          id?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          status?: string | null
+          subject?: string
+          template_id?: string | null
+          test_email?: string
+          tracking_id?: string | null
+          updated_at?: string | null
+          variables_used?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_test_sends_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_tracking_events: {
         Row: {
           created_at: string | null
