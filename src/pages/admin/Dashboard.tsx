@@ -3,6 +3,7 @@ import { useState } from "react";
 import { TimeRangeSelector } from "@/components/admin/dashboard/TimeRangeSelector";
 import { EnhancedStatsCards } from "@/components/admin/dashboard/EnhancedStatsCards";
 import { AdvancedCharts } from "@/components/admin/dashboard/AdvancedCharts";
+import { UserBehaviorAnalysis } from "@/components/admin/dashboard/UserBehaviorAnalysis";
 import { SalesChart } from "@/components/admin/dashboard/SalesChart";
 import { UserGrowthChart } from "@/components/admin/dashboard/UserGrowthChart";
 import { OrderStatusChart } from "@/components/admin/dashboard/OrderStatusChart";
@@ -47,8 +48,9 @@ export default function Dashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">核心指标</TabsTrigger>
+          <TabsTrigger value="behavior">用户行为</TabsTrigger>
           <TabsTrigger value="advanced">高级分析</TabsTrigger>
           <TabsTrigger value="legacy">传统视图</TabsTrigger>
         </TabsList>
@@ -59,6 +61,10 @@ export default function Dashboard() {
             isLoading={isStatsLoading}
             onRefresh={handleRefresh}
           />
+        </TabsContent>
+
+        <TabsContent value="behavior" className="space-y-6">
+          <UserBehaviorAnalysis isLoading={isLoading} />
         </TabsContent>
 
         <TabsContent value="advanced" className="space-y-6">
