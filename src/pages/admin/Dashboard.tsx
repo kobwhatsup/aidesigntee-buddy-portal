@@ -1,12 +1,16 @@
+
 import { useState } from "react";
 import { TimeRangeSelector } from "@/components/admin/dashboard/TimeRangeSelector";
-import { StatsCard } from "@/components/admin/dashboard/StatsCard";
+import { EnhancedStatsCards } from "@/components/admin/dashboard/EnhancedStatsCards";
+import { AdvancedCharts } from "@/components/admin/dashboard/AdvancedCharts";
 import { SalesChart } from "@/components/admin/dashboard/SalesChart";
 import { UserGrowthChart } from "@/components/admin/dashboard/UserGrowthChart";
 import { OrderStatusChart } from "@/components/admin/dashboard/OrderStatusChart";
 import { TimeRange } from "@/types/dashboard";
 import { useDashboard } from "@/hooks/dashboard/useDashboard";
-import { getStatsConfig } from "@/config/dashboardStats";
+import { useEnhancedStatsData } from "@/hooks/dashboard/useEnhancedStatsData";
+import { useTimeRange } from "@/hooks/dashboard/useTimeRange";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
@@ -16,46 +20,19 @@ export default function Dashboard() {
     to: new Date()
   });
 
-  const { statsData, trendsData, isLoading } = useDashboard(timeRange, customDateRange);
-  const stats = getStatsConfig(statsData);
+  const range = useTimeRange(timeRange, customDateRange);
+  const { trendsData, isLoading: isTrendsLoading } = useDashboard(timeRange, customDateRange);
+  const { 
+    data: enhancedStatsData, 
+    isLoading: isStatsLoading, 
+    refetch: refetchStats 
+  } = useEnhancedStatsData(range);
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-48" />
-        </div>
-        
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((index) => (
-            <div key={index} className="p-6 rounded-lg border">
-              <div className="flex items-center">
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <div className="ml-4 space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-4 w-20" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+  const isLoading = isStatsLoading || isTrendsLoading;
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="p-6 rounded-lg border">
-            <Skeleton className="h-[300px]" />
-          </div>
-          <div className="p-6 rounded-lg border">
-            <Skeleton className="h-[300px]" />
-          </div>
-          <div className="p-6 rounded-lg border">
-            <Skeleton className="h-[300px]" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleRefresh = () => {
+    refetchStats();
+  };
 
   return (
     <div className="space-y-6">
@@ -68,18 +45,68 @@ export default function Dashboard() {
           onCustomDateRangeChange={setCustomDateRange}
         />
       </div>
-      
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {stats.map((stat) => (
-          <StatsCard key={stat.name} stat={stat} />
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SalesChart data={trendsData?.trends || []} />
-        <UserGrowthChart data={trendsData?.trends || []} />
-        <OrderStatusChart data={trendsData?.orderStatus || []} />
-      </div>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview">核心指标</TabsTrigger>
+          <TabsTrigger value="advanced">高级分析</TabsTrigger>
+          <TabsTrigger value="legacy">传统视图</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <EnhancedStatsCards 
+            data={enhancedStatsData} 
+            isLoading={isStatsLoading}
+            onRefresh={handleRefresh}
+          />
+        </TabsContent>
+
+        <TabsContent value="advanced" className="space-y-6">
+          <AdvancedCharts 
+            trendsData={trendsData?.trends || []} 
+            isLoading={isTrendsLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="legacy" className="space-y-6">
+          {isLoading ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((index) => (
+                  <div key={index} className="p-6 rounded-lg border">
+                    <div className="flex items-center">
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                      <div className="ml-4 space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <div className="p-6 rounded-lg border">
+                  <Skeleton className="h-[300px]" />
+                </div>
+                <div className="p-6 rounded-lg border">
+                  <Skeleton className="h-[300px]" />
+                </div>
+                <div className="p-6 rounded-lg border">
+                  <Skeleton className="h-[300px]" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <SalesChart data={trendsData?.trends || []} />
+              <UserGrowthChart data={trendsData?.trends || []} />
+              <OrderStatusChart data={trendsData?.orderStatus || []} />
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
