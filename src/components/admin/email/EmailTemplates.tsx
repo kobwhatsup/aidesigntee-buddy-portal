@@ -1,10 +1,11 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Eye, Send } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Send, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { TemplateEditor } from "./TemplateEditor";
@@ -83,79 +84,113 @@ export function EmailTemplates() {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center p-8">加载中...</div>;
+    return (
+      <div className="min-h-[400px] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">邮件模板</h2>
-          <Button onClick={handleCreateTemplate}>
+      <div className="h-full flex flex-col">
+        <div className="flex justify-between items-center mb-6 flex-shrink-0">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">邮件模板</h2>
+            <p className="text-sm text-gray-600 mt-1">管理您的邮件模板库</p>
+          </div>
+          <Button onClick={handleCreateTemplate} className="bg-blue-600 hover:bg-blue-700 text-white">
             <Plus className="h-4 w-4 mr-2" />
             创建模板
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {templates?.map((template) => (
-            <Card key={template.id}>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{template.name}</CardTitle>
-                    <Badge variant="secondary" className="mt-2">
-                      {getTemplateTypeLabel(template.template_type)}
-                    </Badge>
-                  </div>
-                  <Badge variant={template.is_active ? "default" : "secondary"}>
-                    {template.is_active ? "激活" : "停用"}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {template.subject}
-                </p>
-                <div className="text-xs text-gray-500 mb-4">
-                  创建时间: {format(new Date(template.created_at), 'yyyy-MM-dd HH:mm')}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTestTemplate(template)}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditTemplate(template)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteTemplate(template.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {templates?.length === 0 && (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">暂无邮件模板</h3>
-            <p className="text-gray-600 mb-4">创建您的第一个邮件模板</p>
-            <Button onClick={handleCreateTemplate}>
-              <Plus className="h-4 w-4 mr-2" />
-              创建模板
-            </Button>
+        {templates?.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Mail className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">暂无邮件模板</h3>
+              <p className="text-gray-600 mb-6 max-w-sm">创建您的第一个邮件模板，为营销活动做准备</p>
+              <Button onClick={handleCreateTemplate} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                创建模板
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {templates?.map((template) => (
+                <Card 
+                  key={template.id} 
+                  className="h-[280px] flex flex-col bg-white border border-gray-200 hover:shadow-md transition-all duration-200"
+                >
+                  <CardHeader className="flex-shrink-0 pb-3">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg text-gray-900 line-clamp-2 leading-tight">
+                          {template.name}
+                        </CardTitle>
+                        <Badge variant="secondary" className="mt-2 bg-gray-100 text-gray-700">
+                          {getTemplateTypeLabel(template.template_type)}
+                        </Badge>
+                      </div>
+                      <Badge 
+                        variant={template.is_active ? "default" : "secondary"}
+                        className="ml-2 flex-shrink-0"
+                      >
+                        {template.is_active ? "激活" : "停用"}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-between pt-0">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600 line-clamp-3 mb-4">
+                        {template.subject}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-3 mt-4 pt-3 border-t border-gray-100 flex-shrink-0">
+                      <div className="text-xs text-gray-500">
+                        创建时间: {format(new Date(template.created_at), 'yyyy-MM-dd HH:mm')}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleTestTemplate(template)}
+                          className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                        >
+                          <Send className="h-4 w-4 mr-1" />
+                          测试
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditTemplate(template)}
+                          className="flex-1 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                        >
+                          <Edit className="h-4 w-4 mr-1" />
+                          编辑
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteTemplate(template.id)}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50 border-gray-300"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>
