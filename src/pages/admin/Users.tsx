@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
@@ -46,11 +47,8 @@ export default function Users() {
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('用户未登录');
         throw new Error('未登录');
       }
-
-      console.log('当前用户ID:', user.id);
 
       // 检查管理员权限
       const { data: adminUser, error: adminError } = await supabase
@@ -59,55 +57,66 @@ export default function Users() {
         .eq('user_id', user.id)
         .single();
 
-      console.log('管理员查询结果:', { adminUser, adminError });
-
       if (adminError || !adminUser) {
-        console.log('没有管理员权限');
         throw new Error('没有管理员权限');
       }
 
-      // 首先获取profiles数据
+      // 直接从auth用户获取数据（使用管理员权限）
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) {
+        console.error('获取auth用户失败:', authError);
+        throw authError;
+      }
+
+      console.log('Auth用户数据:', authUsers.users);
+
+      // 获取profiles数据
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          created_at,
-          username
-        `);
-
-      console.log('Profiles查询结果:', { profiles, profileError });
+        .select('id, username');
 
       if (profileError) {
         console.error('获取profiles失败:', profileError);
-        throw profileError;
       }
 
-      // 获取每个用户的订单数量
-      const usersWithOrders = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          const { count } = await supabase
-            .from('orders')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', profile.id);
+      // 创建profiles映射
+      const profilesMap = new Map();
+      if (profiles) {
+        profiles.forEach(profile => {
+          profilesMap.set(profile.id, profile);
+        });
+      }
 
-          // 尝试从auth获取邮箱信息，如果失败就使用null
-          let email = null;
-          try {
-            const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
-            email = authUser.user?.email || null;
-          } catch (error) {
-            console.log(`无法获取用户 ${profile.id} 的邮箱信息:`, error);
-          }
+      // 批量获取所有用户的订单数量
+      const userIds = authUsers.users.map(u => u.id);
+      const orderCounts = new Map();
+      
+      if (userIds.length > 0) {
+        const { data: orderCountData } = await supabase
+          .from('orders')
+          .select('user_id')
+          .in('user_id', userIds);
+        
+        if (orderCountData) {
+          orderCountData.forEach(order => {
+            const count = orderCounts.get(order.user_id) || 0;
+            orderCounts.set(order.user_id, count + 1);
+          });
+        }
+      }
 
-          return {
-            id: profile.id,
-            email: email,
-            created_at: profile.created_at,
-            username: profile.username || null,
-            order_count: count || 0
-          };
-        })
-      );
+      // 合并数据
+      const usersWithOrders = authUsers.users.map(authUser => {
+        const profile = profilesMap.get(authUser.id);
+        return {
+          id: authUser.id,
+          email: authUser.email || null,
+          created_at: authUser.created_at,
+          username: profile?.username || null,
+          order_count: orderCounts.get(authUser.id) || 0
+        };
+      });
 
       console.log('最终用户数据:', usersWithOrders);
       return usersWithOrders;
@@ -131,15 +140,8 @@ export default function Users() {
 
       if (ordersError) throw ordersError;
 
-      // 获取订单数量
-      const { count } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
-
       setSelectedUser({
         ...userFromList,
-        order_count: count || 0,
         orders: orders || []
       });
     } catch (error: any) {
@@ -195,9 +197,13 @@ export default function Users() {
             {users && users.length > 0 ? (
               users.map((user: UserWithOrders) => (
                 <TableRow key={user.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium text-gray-900">{user.email || '未设置'}</TableCell>
+                  <TableCell className="font-medium text-gray-900">
+                    {user.email || '未设置'}
+                  </TableCell>
                   <TableCell className="text-gray-900">{user.username || '未设置'}</TableCell>
-                  <TableCell className="text-gray-900">{format(new Date(user.created_at), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
+                  <TableCell className="text-gray-900">
+                    {format(new Date(user.created_at), 'yyyy-MM-dd HH:mm:ss')}
+                  </TableCell>
                   <TableCell className="text-gray-900 font-medium">{user.order_count}</TableCell>
                   <TableCell>
                     <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800 font-medium">
@@ -259,24 +265,28 @@ export default function Users() {
               <div>
                 <h3 className="text-lg font-medium mb-4 text-gray-900">最近订单</h3>
                 <div className="space-y-4">
-                  {selectedUser.orders.map(order => (
-                    <div key={order.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-sm text-gray-600">订单编号：{order.id.slice(0, 8)}</p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            下单时间：{format(new Date(order.created_at), 'yyyy-MM-dd HH:mm:ss')}
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-gray-900">¥{order.total_amount}</p>
-                          <span className="inline-block mt-1 px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                            {order.status}
-                          </span>
+                  {selectedUser.orders.length > 0 ? (
+                    selectedUser.orders.map(order => (
+                      <div key={order.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-sm text-gray-600">订单编号：{order.id.slice(0, 8)}</p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              下单时间：{format(new Date(order.created_at), 'yyyy-MM-dd HH:mm:ss')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-gray-900">¥{order.total_amount}</p>
+                            <span className="inline-block mt-1 px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                              {order.status}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">暂无订单记录</p>
+                  )}
                 </div>
               </div>
             </div>
