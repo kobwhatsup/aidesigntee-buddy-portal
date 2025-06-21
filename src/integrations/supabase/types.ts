@@ -99,15 +99,66 @@ export type Database = {
         }
         Relationships: []
       }
+      design_comments: {
+        Row: {
+          content: string
+          created_at: string
+          design_id: string
+          id: string
+          parent_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          design_id: string
+          id?: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          design_id?: string
+          id?: string
+          parent_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_comments_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "design_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "design_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "design_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       design_drafts: {
         Row: {
+          category: string | null
+          comments_count: number | null
           created_at: string
           description: string | null
           design_back: string | null
           design_front: string | null
+          favorites_count: number | null
+          featured_at: string | null
           id: string
           is_deleted: boolean | null
           is_public: boolean | null
+          last_interaction_at: string | null
+          likes_count: number | null
           preview_back: string | null
           preview_front: string | null
           prompt_back: string | null
@@ -121,13 +172,19 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
+          category?: string | null
+          comments_count?: number | null
           created_at?: string
           description?: string | null
           design_back?: string | null
           design_front?: string | null
+          favorites_count?: number | null
+          featured_at?: string | null
           id?: string
           is_deleted?: boolean | null
           is_public?: boolean | null
+          last_interaction_at?: string | null
+          likes_count?: number | null
           preview_back?: string | null
           preview_front?: string | null
           prompt_back?: string | null
@@ -141,13 +198,19 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
+          category?: string | null
+          comments_count?: number | null
           created_at?: string
           description?: string | null
           design_back?: string | null
           design_front?: string | null
+          favorites_count?: number | null
+          featured_at?: string | null
           id?: string
           is_deleted?: boolean | null
           is_public?: boolean | null
+          last_interaction_at?: string | null
+          likes_count?: number | null
           preview_back?: string | null
           preview_front?: string | null
           prompt_back?: string | null
@@ -161,6 +224,64 @@ export type Database = {
           view_count?: number | null
         }
         Relationships: []
+      }
+      design_favorites: {
+        Row: {
+          created_at: string
+          design_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          design_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          design_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_favorites_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "design_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_likes: {
+        Row: {
+          created_at: string
+          design_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          design_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          design_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_likes_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "design_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       design_projects: {
         Row: {
@@ -265,6 +386,114 @@ export type Database = {
             columns: ["design_id"]
             isOneToOne: false
             referencedRelation: "design_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_tag_relations: {
+        Row: {
+          created_at: string
+          design_id: string
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          created_at?: string
+          design_id: string
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          created_at?: string
+          design_id?: string
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_tag_relations_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "design_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "design_tag_relations_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "design_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_tags: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      design_usage_records: {
+        Row: {
+          created_at: string
+          design_id: string
+          designer_id: string
+          id: string
+          order_id: string | null
+          purchase_amount: number
+          reward_amount: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          design_id: string
+          designer_id: string
+          id?: string
+          order_id?: string | null
+          purchase_amount?: number
+          reward_amount?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          design_id?: string
+          designer_id?: string
+          id?: string
+          order_id?: string | null
+          purchase_amount?: number
+          reward_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_usage_records_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "design_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "design_usage_records_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -1299,6 +1528,27 @@ export type Database = {
           },
         ]
       }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       user_segments: {
         Row: {
           conditions: Json
@@ -1434,6 +1684,10 @@ export type Database = {
       get_today_visitors_count: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      increment_design_view_count: {
+        Args: { design_id: string }
+        Returns: undefined
       }
       update_session_activity: {
         Args: {
