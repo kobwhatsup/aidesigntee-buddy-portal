@@ -20,6 +20,7 @@ interface User {
   id: string;
   created_at: string;
   username: string | null;
+  email: string | null;
 }
 
 interface UserWithOrders extends User {
@@ -41,7 +42,7 @@ export default function Users() {
 
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ['users'],
-    queryFn: async () => {
+    queryFn: async (): Promise<UserWithOrders[]> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('未登录');
 
@@ -56,8 +57,13 @@ export default function Users() {
         throw new Error('没有管理员权限');
       }
 
-      // 获取用户列表
-      const { data: profiles, error } = await supabase
+      // 获取用户列表和邮箱信息
+      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+      
+      if (authError) throw authError;
+
+      // 获取用户profile信息
+      const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select(`
           id,
@@ -65,18 +71,29 @@ export default function Users() {
           username
         `);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // 合并auth用户和profile数据
+      const usersWithEmail = authUsers.users.map(authUser => {
+        const profile = profiles.find(p => p.id === authUser.id);
+        return {
+          id: authUser.id,
+          email: authUser.email,
+          created_at: authUser.created_at,
+          username: profile?.username || null
+        };
+      });
 
       // 获取每个用户的订单数量
       const usersWithOrders = await Promise.all(
-        profiles.map(async (profile) => {
+        usersWithEmail.map(async (userProfile) => {
           const { count } = await supabase
             .from('orders')
             .select('*', { count: 'exact', head: true })
-            .eq('user_id', profile.id);
+            .eq('user_id', userProfile.id);
 
           return {
-            ...profile,
+            ...userProfile,
             order_count: count || 0
           };
         })
@@ -91,13 +108,8 @@ export default function Users() {
       setIsLoading(true);
       
       // 获取用户基本信息
-      const { data: userProfile, error: userError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (userError) throw userError;
+      const userFromList = users?.find(u => u.id === userId);
+      if (!userFromList) throw new Error('用户不存在');
 
       // 获取用户订单信息
       const { data: orders, error: ordersError } = await supabase
@@ -115,7 +127,7 @@ export default function Users() {
         .eq('user_id', userId);
 
       setSelectedUser({
-        ...userProfile,
+        ...userFromList,
         order_count: count || 0,
         orders: orders || []
       });
@@ -144,7 +156,7 @@ export default function Users() {
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead className="text-gray-900 font-semibold">用户ID</TableHead>
+              <TableHead className="text-gray-900 font-semibold">邮箱地址</TableHead>
               <TableHead className="text-gray-900 font-semibold">用户名</TableHead>
               <TableHead className="text-gray-900 font-semibold">注册时间</TableHead>
               <TableHead className="text-gray-900 font-semibold">订单数</TableHead>
@@ -153,9 +165,9 @@ export default function Users() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user: UserWithOrders) => (
+            {users && users.length > 0 && users.map((user: UserWithOrders) => (
               <TableRow key={user.id} className="hover:bg-gray-50">
-                <TableCell className="font-medium text-gray-900">{user.id.slice(0, 8)}</TableCell>
+                <TableCell className="font-medium text-gray-900">{user.email || '未设置'}</TableCell>
                 <TableCell className="text-gray-900">{user.username || '未设置'}</TableCell>
                 <TableCell className="text-gray-900">{format(new Date(user.created_at), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
                 <TableCell className="text-gray-900 font-medium">{user.order_count}</TableCell>
@@ -192,8 +204,8 @@ export default function Users() {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-sm font-medium text-gray-600">用户ID</h4>
-                  <p className="mt-1 text-gray-900">{selectedUser.id.slice(0, 8)}</p>
+                  <h4 className="text-sm font-medium text-gray-600">邮箱地址</h4>
+                  <p className="mt-1 text-gray-900">{selectedUser.email || '未设置'}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-gray-600">用户名</h4>
