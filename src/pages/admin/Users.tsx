@@ -43,84 +43,35 @@ export default function Users() {
   const { data: users, isLoading: isLoadingUsers, error } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async (): Promise<UserWithOrders[]> => {
-      console.log('开始获取用户数据...');
+      console.log('开始通过Edge Function获取用户数据...');
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('未登录');
-      }
+      try {
+        // 调用 Edge Function 获取用户数据
+        const { data, error } = await supabase.functions.invoke('get-admin-users');
 
-      // 检查管理员权限
-      const { data: adminUser, error: adminError } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', user.id)
-        .single();
-
-      if (adminError || !adminUser) {
-        throw new Error('没有管理员权限');
-      }
-
-      // 直接从auth用户获取数据（使用管理员权限）
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) {
-        console.error('获取auth用户失败:', authError);
-        throw authError;
-      }
-
-      console.log('Auth用户数据:', authUsers.users);
-
-      // 获取profiles数据
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, username');
-
-      if (profileError) {
-        console.error('获取profiles失败:', profileError);
-      }
-
-      // 创建profiles映射
-      const profilesMap = new Map();
-      if (profiles) {
-        profiles.forEach(profile => {
-          profilesMap.set(profile.id, profile);
-        });
-      }
-
-      // 批量获取所有用户的订单数量
-      const userIds = authUsers.users.map(u => u.id);
-      const orderCounts = new Map();
-      
-      if (userIds.length > 0) {
-        const { data: orderCountData } = await supabase
-          .from('orders')
-          .select('user_id')
-          .in('user_id', userIds);
-        
-        if (orderCountData) {
-          orderCountData.forEach(order => {
-            const count = orderCounts.get(order.user_id) || 0;
-            orderCounts.set(order.user_id, count + 1);
-          });
+        if (error) {
+          console.error('Edge Function调用失败:', error);
+          throw new Error(error.message || '获取用户数据失败');
         }
+
+        if (!data || !data.users) {
+          console.error('Edge Function返回数据格式错误:', data);
+          throw new Error('服务器返回数据格式错误');
+        }
+
+        console.log('成功获取用户数据:', data.users.length, '个用户');
+        return data.users;
+
+      } catch (error) {
+        console.error('获取用户数据失败:', error);
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error('获取用户数据失败');
       }
-
-      // 合并数据
-      const usersWithOrders = authUsers.users.map(authUser => {
-        const profile = profilesMap.get(authUser.id);
-        return {
-          id: authUser.id,
-          email: authUser.email || null,
-          created_at: authUser.created_at,
-          username: profile?.username || null,
-          order_count: orderCounts.get(authUser.id) || 0
-        };
-      });
-
-      console.log('最终用户数据:', usersWithOrders);
-      return usersWithOrders;
-    }
+    },
+    retry: 1,
+    retryDelay: 1000,
   });
 
   const handleViewDetails = async (userId: string) => {
@@ -160,7 +111,7 @@ export default function Users() {
         <h1 className="text-2xl font-bold text-gray-900 mb-6">用户管理</h1>
         <div className="text-red-600 p-4 border border-red-200 rounded-lg bg-red-50">
           <p>获取用户数据失败: {error.message}</p>
-          <p className="text-sm mt-2">请检查您是否具有管理员权限</p>
+          <p className="text-sm mt-2">请检查您是否具有管理员权限或网络连接是否正常</p>
         </div>
       </div>
     );
