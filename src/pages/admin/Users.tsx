@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
@@ -40,11 +39,18 @@ export default function Users() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null);
 
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users'],
+  const { data: users, isLoading: isLoadingUsers, error } = useQuery({
+    queryKey: ['admin-users'],
     queryFn: async (): Promise<UserWithOrders[]> => {
+      console.log('开始获取用户数据...');
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('未登录');
+      if (!user) {
+        console.log('用户未登录');
+        throw new Error('未登录');
+      }
+
+      console.log('当前用户ID:', user.id);
 
       // 检查管理员权限
       const { data: adminUser, error: adminError } = await supabase
@@ -53,16 +59,14 @@ export default function Users() {
         .eq('user_id', user.id)
         .single();
 
+      console.log('管理员查询结果:', { adminUser, adminError });
+
       if (adminError || !adminUser) {
+        console.log('没有管理员权限');
         throw new Error('没有管理员权限');
       }
 
-      // 获取用户列表和邮箱信息
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-      
-      if (authError) throw authError;
-
-      // 获取用户profile信息
+      // 首先获取profiles数据
       const { data: profiles, error: profileError } = await supabase
         .from('profiles')
         .select(`
@@ -71,34 +75,41 @@ export default function Users() {
           username
         `);
 
-      if (profileError) throw profileError;
+      console.log('Profiles查询结果:', { profiles, profileError });
 
-      // 合并auth用户和profile数据
-      const usersWithEmail = authUsers.users.map(authUser => {
-        const profile = profiles.find(p => p.id === authUser.id);
-        return {
-          id: authUser.id,
-          email: authUser.email,
-          created_at: authUser.created_at,
-          username: profile?.username || null
-        };
-      });
+      if (profileError) {
+        console.error('获取profiles失败:', profileError);
+        throw profileError;
+      }
 
       // 获取每个用户的订单数量
       const usersWithOrders = await Promise.all(
-        usersWithEmail.map(async (userProfile) => {
+        (profiles || []).map(async (profile) => {
           const { count } = await supabase
             .from('orders')
             .select('*', { count: 'exact', head: true })
-            .eq('user_id', userProfile.id);
+            .eq('user_id', profile.id);
+
+          // 尝试从auth获取邮箱信息，如果失败就使用null
+          let email = null;
+          try {
+            const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
+            email = authUser.user?.email || null;
+          } catch (error) {
+            console.log(`无法获取用户 ${profile.id} 的邮箱信息:`, error);
+          }
 
           return {
-            ...userProfile,
+            id: profile.id,
+            email: email,
+            created_at: profile.created_at,
+            username: profile.username || null,
             order_count: count || 0
           };
         })
       );
 
+      console.log('最终用户数据:', usersWithOrders);
       return usersWithOrders;
     }
   });
@@ -140,10 +151,26 @@ export default function Users() {
     }
   };
 
+  if (error) {
+    console.error('查询错误:', error);
+    return (
+      <div className="p-6 bg-white min-h-screen">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">用户管理</h1>
+        <div className="text-red-600 p-4 border border-red-200 rounded-lg bg-red-50">
+          <p>获取用户数据失败: {error.message}</p>
+          <p className="text-sm mt-2">请检查您是否具有管理员权限</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoadingUsers) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">正在加载用户数据...</p>
+        </div>
       </div>
     );
   }
@@ -165,28 +192,36 @@ export default function Users() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users && users.length > 0 && users.map((user: UserWithOrders) => (
-              <TableRow key={user.id} className="hover:bg-gray-50">
-                <TableCell className="font-medium text-gray-900">{user.email || '未设置'}</TableCell>
-                <TableCell className="text-gray-900">{user.username || '未设置'}</TableCell>
-                <TableCell className="text-gray-900">{format(new Date(user.created_at), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
-                <TableCell className="text-gray-900 font-medium">{user.order_count}</TableCell>
-                <TableCell>
-                  <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800 font-medium">
-                    正常
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="link"
-                    className="text-blue-600 hover:text-blue-800 p-0"
-                    onClick={() => handleViewDetails(user.id)}
-                  >
-                    查看详情
-                  </Button>
+            {users && users.length > 0 ? (
+              users.map((user: UserWithOrders) => (
+                <TableRow key={user.id} className="hover:bg-gray-50">
+                  <TableCell className="font-medium text-gray-900">{user.email || '未设置'}</TableCell>
+                  <TableCell className="text-gray-900">{user.username || '未设置'}</TableCell>
+                  <TableCell className="text-gray-900">{format(new Date(user.created_at), 'yyyy-MM-dd HH:mm:ss')}</TableCell>
+                  <TableCell className="text-gray-900 font-medium">{user.order_count}</TableCell>
+                  <TableCell>
+                    <span className="px-2 py-1 rounded-full text-sm bg-green-100 text-green-800 font-medium">
+                      正常
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="link"
+                      className="text-blue-600 hover:text-blue-800 p-0"
+                      onClick={() => handleViewDetails(user.id)}
+                    >
+                      查看详情
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  暂无用户数据
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>
