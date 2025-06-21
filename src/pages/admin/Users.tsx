@@ -41,7 +41,7 @@ export default function Users() {
 
   const { data: users, isLoading: isLoadingUsers } = useQuery<UserWithOrders[]>({
     queryKey: ['users'],
-    queryFn: async () => {
+    queryFn: async (): Promise<UserWithOrders[]> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('未登录');
 
