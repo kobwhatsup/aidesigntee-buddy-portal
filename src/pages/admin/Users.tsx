@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
@@ -176,7 +177,7 @@ export default function Users() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user) => (
+            {users && users.map((user) => (
               <TableRow key={user.id} className="hover:bg-gray-50">
                 <TableCell className="font-medium text-gray-900">
                   <div className="flex items-center gap-2">
