@@ -20,7 +20,7 @@ interface User {
   id: string;
   created_at: string;
   username: string | null;
-  email?: string;
+  email: string;
 }
 
 interface UserWithOrders extends User {
@@ -42,7 +42,7 @@ export default function Users() {
 
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ['users'],
-    queryFn: async () => {
+    queryFn: async (): Promise<UserWithOrders[]> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('未登录');
 
@@ -177,7 +177,7 @@ export default function Users() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users?.map((user: UserWithOrders) => (
+            {users?.map((user) => (
               <TableRow key={user.id} className="hover:bg-gray-50">
                 <TableCell className="font-medium text-gray-900">
                   <div className="flex items-center gap-2">
