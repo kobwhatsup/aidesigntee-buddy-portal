@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
@@ -40,7 +39,7 @@ export default function Users() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null);
 
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
+  const { data: users, isLoading: isLoadingUsers } = useQuery<UserWithOrders[]>({
     queryKey: ['users'],
     queryFn: async (): Promise<UserWithOrders[]> => {
       const { data: { user } } = await supabase.auth.getUser();
